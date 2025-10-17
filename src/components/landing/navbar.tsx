@@ -59,10 +59,10 @@ export default function Navbar() {
           {/* Action Buttons */}
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm">
-              Waitlist
+              Sign in
             </Button>
             <Button variant="default" size="sm">
-              Sign up
+              Start indexing
             </Button>
           </div>
         </div>
