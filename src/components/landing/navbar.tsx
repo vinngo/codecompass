@@ -58,8 +58,8 @@ export default function Navbar() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm">
-              Sign in
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/auth/login">Sign in</Link>
             </Button>
             <Button variant="default" size="sm">
               Start indexing
