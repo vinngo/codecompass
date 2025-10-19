@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "../ui/button";
+import NextLink from "next/link";
 
 export default function Hero() {
   return (
@@ -21,7 +23,9 @@ export default function Hero() {
         RAG powered chat.
       </p>
       <div className="flex flex-row gap-4">
-        <Button>Get started</Button>
+        <Button asChild>
+          <Link href="/auth/login">Get started</Link>
+        </Button>
         <Button variant="outline">Our Features</Button>
       </div>
     </div>
