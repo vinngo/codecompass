@@ -1,9 +1,38 @@
+"use client";
+
 import { login } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Github, Gitlab } from "@geist-ui/icons";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const [status, setStatus] = useState<{
+    type: "idle" | "loading" | "success" | "error";
+    message?: string;
+    email?: string;
+  }>({ type: "idle" });
+
+  async function handleSubmit(formData: FormData) {
+    setStatus({ type: "loading" });
+
+    const result = await login(formData);
+
+    if (result.success) {
+      setStatus({
+        type: "success",
+        email: result.email,
+        message: "Check your email for a magic link to sign in!",
+      });
+    } else {
+      setStatus({
+        type: "error",
+        message: result.error || "Something went wrong. Please try again.",
+      });
+    }
+  }
+
+  // Show login form
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
@@ -26,7 +55,7 @@ export default function LoginPage() {
               Sign in to your CodeCompass account
             </h1>
           </div>
-          <form action={login} className="space-y-4">
+          <form action={handleSubmit} className="space-y-4">
             <div className="flex flex-col space-y-5">
               <Button type="button" variant="outline">
                 <div className="flex flex-row gap-3">
@@ -45,6 +74,11 @@ export default function LoginPage() {
             <div className="border-b border-border"></div>
             {/* Email Input */}
             <div className="space-y-5">
+              {status.type === "error" && (
+                <div className="bg-destructive/10 border border-destructive text-destructive rounded-md p-3 text-sm">
+                  {status.message}
+                </div>
+              )}
               <div className="flex flex-col items-start gap-1">
                 <span className="text-sm text-muted-foreground">Email</span>
                 <Input
@@ -52,13 +86,28 @@ export default function LoginPage() {
                   name="email"
                   placeholder="Enter your email address..."
                   required
+                  disabled={status.type === "loading"}
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Continue
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={status.type === "loading"}
+              >
+                {status.type === "loading" ? "Sending..." : "Continue"}
               </Button>
             </div>
           </form>
+          {status.type === "success" && (
+            <div className="bg-accent/10 border border-accent text-accent rounded-md p-3 text-sm">
+              {status.message}
+            </div>
+          )}
+          {status.type === "error" && (
+            <div className="bg-destructive/10 border border-destructive text-destructive rounded-md p-3 text-sm">
+              {status.message}
+            </div>
+          )}
         </div>
       </main>
     </div>
