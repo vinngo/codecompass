@@ -41,12 +41,9 @@ export default function LoginPage() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/`,
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`, // 
       },
     });
-
-    console.log("OAuth redirect URL:", data?.url);
-    console.log("OAuth error:", error);
 
     if (error) {
       console.error("Error signing in with GitHub:", error.message);
