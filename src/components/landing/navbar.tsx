@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -15,8 +16,17 @@ export default function Navbar() {
       <div className="flex h-16 items-center justify-between">
         {/* Logo */}
         <div className="flex-shrink-0">
-          <Link href="/" className="text-xl font-bold text-foreground">
-            Codecompass
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/codecompass.png"
+              alt="CodeCompass Logo"
+              width={40}
+              height={40}
+              className="h-10 w-10"
+            />
+            <span className="text-xl font-bold text-foreground">
+              CodeCompass
+            </span>
           </Link>
         </div>
         <div className="hidden md:flex gap-8 items-center">

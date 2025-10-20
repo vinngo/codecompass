@@ -126,3 +126,13 @@
         @apply bg-background text-foreground;
     }
 }
+
+::selection {
+  background-color: #14b8a6;
+  color: white;
+}
+
+::-moz-selection {
+  background-color: #14b8a6;
+  color: white;
+}
