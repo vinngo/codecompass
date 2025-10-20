@@ -2,19 +2,30 @@
 
 import { Button } from "@/components/ui/button";
 import { Building2 } from "lucide-react";
+import { OrganizationWithRole } from "@/app/types/supabase";
 
-export function OrganizationButton() {
+type OrganizationButtonProps = {
+  organization: OrganizationWithRole;
+};
+
+export function OrganizationButton({ organization }: OrganizationButtonProps) {
+  const role = organization.user_organizations[0]?.role || "member";
+
   return (
-    <Button variant="outline" className="bg-background h-21 justify-start">
-      <div className="flex flex-row gap-3 text-sm px-2">
-        {/*Surround in a circular container */}
-        <div className="rounded-full bg-black p-2.5">
-          <Building2 />
+    <Button
+      variant="outline"
+      className="bg-background h-auto min-h-21 justify-start p-4 w-full"
+    >
+      <div className="flex flex-row gap-4 text-sm w-full overflow-hidden">
+        {/* Surround in a circular container */}
+        <div className="rounded-full bg-black p-2.5 flex-shrink-0">
+          <Building2 className="text-primary-foreground" />
         </div>
-        <div className="flex flex-col justify-start items-start">
-          <span className="font-semibold">Organization</span>
-          <span className="text-muted-foreground text-xs">
-            Github <span className="text-md">&middot;</span> 1 project
+        <div className="flex flex-col justify-start items-start min-w-0 flex-1">
+          <span className="font-semibold truncate">{organization.name}</span>
+          <span className="text-muted-foreground text-xs whitespace-nowrap">
+            {role ? "Owner" : "Member"}{" "}
+            <span className="text-md">&middot;</span> 1 project
           </span>
         </div>
       </div>

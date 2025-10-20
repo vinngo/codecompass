@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/field";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createOrg } from "@/lib/services/orgService";
 
 export function NewOrganizationForm() {
   const router = useRouter();
@@ -23,11 +24,13 @@ export function NewOrganizationForm() {
     setError(null);
 
     try {
-      // TODO: Implement organization creation with Supabase
-      console.log("Creating organization:", name);
+      const formData = new FormData(e.currentTarget);
+      const result = await createOrg(formData);
 
-      // Placeholder for now
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
 
       // Redirect to organizations page after creation
       router.push("/dashboard/organizations");
@@ -59,6 +62,7 @@ export function NewOrganizationForm() {
           <FieldLabel htmlFor="name">Name</FieldLabel>
           <input
             id="name"
+            name="name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}

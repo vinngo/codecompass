@@ -3,34 +3,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { OrganizationWithRole } from "@/app/types/supabase";
 import { OrganizationButton } from "./card";
-import { createClient } from "@/utils/supabase/client";
+import { getOrgs } from "@/lib/services/orgService";
 
 export function OrganizationList() {
-  const { data: organizations = [], isLoading } = useQuery<
-    OrganizationWithRole[]
-  >({
+  const { data, isLoading, error } = useQuery<OrganizationWithRole[]>({
     queryKey: ["organizations"],
     queryFn: async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const result = await getOrgs();
 
-      if (!user) {
-        return [];
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
-      const { data: organizations, error: organizationsError } = await supabase
-        .from("organizations")
-        .select("id,name,created_at,user_organizations(role,joined_at)")
-        .eq("user_organizations.user_id", user.id);
-
-      if (organizationsError) {
-        console.error("Error fetching organizations:", organizationsError);
-        return [];
-      }
-
-      return (organizations ?? []) as OrganizationWithRole[];
+      return result.data as OrganizationWithRole[];
     },
   });
 
@@ -38,9 +23,17 @@ export function OrganizationList() {
     return <div>Loading...</div>;
   }
 
+  if (error) {
+    return <div className="text-destructive">Error: {error.message}</div>;
+  }
+
+  if (!data || data.length === 0) {
+    return <div className="text-muted-foreground">No organizations found</div>;
+  }
+
   return (
-    <div>
-      {organizations?.map((organization) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {data.map((organization) => (
         <OrganizationButton key={organization.id} organization={organization} />
       ))}
     </div>
