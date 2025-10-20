@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Github, Gitlab } from "@geist-ui/icons";
 import { useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+
+const supabase = createClient();
 
 export default function LoginPage() {
   const [status, setStatus] = useState<{
@@ -32,6 +35,28 @@ export default function LoginPage() {
     }
   }
 
+  async function signInWithGithub() {
+    const supabase = createClient();
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/`,
+      },
+    });
+
+    console.log("OAuth redirect URL:", data?.url);
+    console.log("OAuth error:", error);
+
+    if (error) {
+      console.error("Error signing in with GitHub:", error.message);
+    } else if (data?.url) {
+      // Redirect the user to GitHub's OAuth consent screen
+      window.location.href = data.url;
+    }
+  }
+
+
   // Show login form
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -57,7 +82,7 @@ export default function LoginPage() {
           </div>
           <form action={handleSubmit} className="space-y-4">
             <div className="flex flex-col space-y-5">
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" onClick={signInWithGithub}>
                 <div className="flex flex-row gap-3">
                   <Github />
                   <p>Continue with Github</p>
