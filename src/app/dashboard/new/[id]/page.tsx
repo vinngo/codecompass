@@ -7,8 +7,6 @@ type NewPageProps = {
 export default async function NewPage({ params }: NewPageProps) {
   const { id } = await params;
 
-  console.log("Creating new project for org ID:", id);
-
   return (
     <div className="container mx-auto py-8 px-4 max-w-2xl">
       <NewProjectForm orgId={id} />
