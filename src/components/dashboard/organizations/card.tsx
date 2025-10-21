@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Building2 } from "lucide-react";
 import { OrganizationWithRole } from "@/app/types/supabase";
+import { useRouter } from "next/navigation";
 
 type OrganizationButtonProps = {
   organization: OrganizationWithRole;
@@ -11,10 +12,13 @@ type OrganizationButtonProps = {
 export function OrganizationButton({ organization }: OrganizationButtonProps) {
   const role = organization.user_organizations[0]?.role || "member";
 
+  const router = useRouter();
+
   return (
     <Button
       variant="outline"
       className="bg-background h-auto min-h-21 justify-start p-4 w-full"
+      onClick={() => router.push(`/dashboard/org/${organization.id}`)}
     >
       <div className="flex flex-row gap-4 text-sm w-full overflow-hidden">
         {/* Surround in a circular container */}
