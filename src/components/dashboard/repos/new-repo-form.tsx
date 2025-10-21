@@ -24,6 +24,7 @@ import {
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { createRepoViaGithub } from "@/lib/services/repoService";
 
 type NewProjectFormProps = {
   orgId: string;
@@ -39,7 +40,34 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {};
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    if (type === "local") {
+      //temp: implement S3 object storage
+      return;
+    } else if (type === "github") {
+      try {
+        const formData = new FormData(e.currentTarget);
+        const result = await createRepoViaGithub(formData, orgId);
+
+        if (!result.success) {
+          setError(result.error);
+          setIsLoading(false);
+          return;
+        }
+
+        router.push(`/dashboard/org/${orgId}`);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "An unexpected error occurred",
+        );
+        setIsLoading(false);
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col bg-elevated">
@@ -47,6 +75,9 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
         onSubmit={handleSubmit}
         className="space-y-6 px-5 py-5 border rounded-md"
       >
+        {/* Hidden input to ensure type value is submitted */}
+        <input type="hidden" name="type" value={type} />
+
         <div className="flex flex-col gap-1">
           <span className="text-foreground">Index a new Repository</span>
           <span className="text-muted-foreground text-xs">
@@ -77,7 +108,12 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
           <Separator />
           <Field>
             <FieldLabel htmlFor="type">Type</FieldLabel>
-            <Select value={type} onValueChange={setType}>
+            <Select
+              value={type}
+              onValueChange={(value) => {
+                setType(value);
+              }}
+            >
               <SelectTrigger id="type" name="type">
                 <SelectValue placeholder="Select a type" />
               </SelectTrigger>
