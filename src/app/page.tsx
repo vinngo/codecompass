@@ -11,9 +11,9 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   // Redirect authenticated users to dashboard
-  if (user) {
-    redirect("/dashboard/organizations");
-  }
+  //if (user) {
+ //   redirect("/dashboard/organizations");
+  //}
 
   // Show landing page for unauthenticated users
   return (
