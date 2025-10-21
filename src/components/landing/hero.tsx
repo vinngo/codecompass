@@ -102,7 +102,7 @@ export default function Hero() {
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Outdated docs</h3>
                   <p className="text-gray-400 text-sm mb-6">
-                    Documentation that's incomplete, outdated, or doesn't exist at all
+                    Documentation that is incomplete, outdated, or does not exist at all
                   </p>
                 </div>
               </div>
