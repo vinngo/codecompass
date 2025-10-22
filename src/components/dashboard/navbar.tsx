@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { NavContext } from "./navcontext";
+import { signOut } from "@/app/(auth)/client";
 
 export function DashboardNavbar() {
   return (
@@ -12,6 +13,9 @@ export function DashboardNavbar() {
           <NavContext />
         </div>
         <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" onClick={signOut}>
+            Sign Out
+          </Button>
           <Button variant="default" size="sm">
             Profile
           </Button>
