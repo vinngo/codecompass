@@ -11,12 +11,8 @@ export type Organization = {
 };
 
 export type OrganizationWithRole = Organization & {
-  user_organizations: {
-    user_id: string;
-    organization_id: string;
-    role: string;
-    joined_at: string;
-  }[];
+  role: string;
+  joined_at: string;
 };
 
 export type Repo = {
