@@ -16,6 +16,10 @@ export function NavContext() {
       setContextText("Documentation");
     } else if (lastSegment === "chat") {
       setContextText("Chat");
+    } else if (lastSegment === "new") {
+      setContextText("New Organization");
+    } else {
+      setContextText("New Repository");
     }
   }, [lastSegment]);
 
