@@ -14,18 +14,34 @@ export async function getOrgs(): Promise<ActionResult<OrganizationWithRole[]>> {
     return { success: false, error: "User not found" };
   }
 
-  const { data: organizations, error: organizationsError } = await supabase
-    .from("organizations")
-    .select("id,name,created_at,user_organizations(role,joined_at)")
-    .eq("user_organizations.user_id", user.id);
+  // Query from user_organizations table to properly filter by user_id
+  const { data: userOrgs, error: organizationsError } = await supabase
+    .from("user_organizations")
+    .select("role,joined_at,organizations(id,name,created_at)")
+    .eq("user_id", user.id);
 
   if (organizationsError) {
     return { success: false, error: organizationsError.message };
   }
 
+  // Transform the data to match OrganizationWithRole structure
+  const organizations: OrganizationWithRole[] = (userOrgs ?? []).map((uo) => {
+    const org = uo.organizations as Organization | Organization[];
+    // Handle case where organizations might be an array (shouldn't happen with proper FK)
+    const orgData = Array.isArray(org) ? org[0] : org;
+
+    return {
+      id: orgData.id,
+      name: orgData.name,
+      created_at: orgData.created_at,
+      role: uo.role,
+      joined_at: uo.joined_at,
+    };
+  });
+
   return {
     success: true,
-    data: (organizations ?? []) as OrganizationWithRole[],
+    data: organizations,
   };
 }
 

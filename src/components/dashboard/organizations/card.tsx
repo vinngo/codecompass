@@ -10,7 +10,7 @@ type OrganizationButtonProps = {
 };
 
 export function OrganizationButton({ organization }: OrganizationButtonProps) {
-  const role = organization.user_organizations[0]?.role || "member";
+  const role = organization.role || "member";
 
   const router = useRouter();
 
