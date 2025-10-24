@@ -11,6 +11,7 @@ import { getReposByOrganizationId } from "@/lib/services/repoService";
 import { Repo } from "@/app/types/supabase";
 import { redirect } from "next/navigation";
 import { RepoList } from "@/components/dashboard/repos/list";
+import OrgHeader from "@/components/dashboard/repos/org-header";
 
 export default async function OrgPage({
   params,
@@ -57,7 +58,7 @@ export default async function OrgPage({
       <div className="container mx-auto py-8 px-4">
         {/* Header Section */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl text-foreground">Organization</h1>
+          <OrgHeader orgId={org.organization_id} />
           <Button variant="default" size="sm">
             <Link href={`/dashboard/new/${id}`}>
               <div className="flex items-center gap-1">
