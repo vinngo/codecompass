@@ -1,66 +1,60 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  ChevronLeft,
-  ChevronRight,
-  BookOpen,
-  MessageCircle,
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { Home, Settings, User } from "lucide-react";
+import { useChatStore } from "@/store/useChatStore";
+import { createClient } from "@/utils/supabase/client";
 
 export function Sidebar() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const { conversations, setConversations } = useChatStore();
+  const supabase = createClient();
 
-  const chapters = [
-    { title: "Introduction" },
-    { title: "Setup Guide" },
-    { title: "File Structure" },
-    { title: "API Reference" },
-    { title: "Examples" },
-  ];
+  useEffect(() => {
+    const fetchConversations = async () => {
+      const { data, error } = await supabase.from("conversations").select("*");
+      if (!error && data) setConversations(data);
+    };
+    fetchConversations();
+  }, [supabase, setConversations]);
 
   return (
-    <div
-      className={`relative h-screen transition-all duration-300 bg-muted border-r border-border
-        ${isOpen ? "w-64" : "w-16"} flex flex-col`}
+    <motion.aside
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      animate={{ width: isHovered ? 200 : 60 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="h-screen bg-background border-r border-border flex flex-col items-start overflow-hidden"
     >
-      {/* Toggle Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsOpen(!isOpen)}
-        className="absolute top-3 -right-3 bg-background border rounded-full shadow-sm"
-      >
-        {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-      </Button>
-
-      {/* Sidebar content */}
-      <div className="flex flex-col mt-12 space-y-2 p-3">
-        <div className="flex items-center gap-2 mb-4">
-          <BookOpen className="text-primary" size={18} />
-          {isOpen && (
-            <span className="font-semibold text-foreground">Documentation</span>
-          )}
-        </div>
-
-        {chapters.map((ch, idx) => (
-          <Button
-            key={idx}
-            variant="ghost"
-            className={`w-full justify-start ${!isOpen && "px-2"}`}
-          >
-            {isOpen ? ch.title : ch.title[0]}
-          </Button>
+      <div className="flex flex-col gap-4 mt-4 w-full">
+        {conversations.map((convo) => (
+          <SidebarItem
+            key={convo.id}
+            label={convo.title}
+            showLabel={isHovered}
+            convoId={convo.id}
+          />
         ))}
-
-        <div className="mt-6 border-t border-border pt-3">
-          <Button variant="outline" className="w-full justify-start">
-            <MessageCircle size={18} className="mr-2" />
-            {isOpen && "Switch to Chat"}
-          </Button>
-        </div>
       </div>
+    </motion.aside>
+  );
+}
+
+function SidebarItem({
+  label,
+  showLabel,
+  convoId,
+}: {
+  label: string;
+  showLabel: boolean;
+  convoId: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2 hover:bg-muted rounded-md cursor-pointer transition-colors w-full">
+      {showLabel && (
+        <span className="text-sm text-foreground truncate">{label}</span>
+      )}
     </div>
   );
 }
