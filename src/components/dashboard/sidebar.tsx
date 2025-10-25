@@ -14,7 +14,10 @@ export function Sidebar() {
   useEffect(() => {
     const fetchConversations = async () => {
       const { data, error } = await supabase.from("conversations").select("*");
+      console.log("fetched data: ", data);
+      console.log("fetched error: ", error);
       if (!error && data) setConversations(data);
+      if (error) console.error(error);
     };
     fetchConversations();
   }, [supabase, setConversations]);
