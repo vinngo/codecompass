@@ -20,7 +20,7 @@ export default function AnswerPanel({ answers }: AnswerPanelProps) {
         {answers.length === 0 ? (
           <div className="text-center text-grey-500 mt-12">
             <p>No answers yet</p>
-            <p className="text-sm mt-2">Code will appear here as they're generated</p>
+            <p className="text-sm mt-2">Code will appear here as they are generated</p>
           </div>
         ) : (
           <div className="space-y-4">
