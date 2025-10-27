@@ -1,7 +1,8 @@
 import { DashboardNavbar } from "@/components/dashboard/navbar";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { Sidebar } from "@/components/dashboard/sidebar";
+import { Sidebar, SidebarItem } from "@/components/dashboard/sidebar";
+import { FolderCode } from "lucide-react";
 
 export default async function DashboardLayout({
   children,
@@ -23,7 +24,12 @@ export default async function DashboardLayout({
       <DashboardNavbar />
 
       <div className="flex flex-1">
-        <Sidebar />
+        <Sidebar>
+          <SidebarItem
+            icon={<FolderCode className="mr-2 h-6 w-6" />}
+            label="Projects"
+          />
+        </Sidebar>
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
