@@ -2,6 +2,7 @@
 
 import AnimatedSkeleton from "./animated-skeleton";
 import CodeSnippet from "./code-snippet";
+
 interface AnswerPanelProps {
   loading: boolean;
   codeSnippets: CodeSnippet[];
@@ -19,9 +20,7 @@ export default function AnswerPanel({
   return (
     <div className="flex-1 border-l border-grey-800 bg-grey-950 overflow-y-auto">
       <div className="px-6">
-        {loading ? (
-          <AnimatedSkeleton />
-        ) : codeSnippets.length === 0 ? (
+        {codeSnippets.length === 0 && !loading ? (
           <div className="text-center text-grey-500 mt-12">
             <p className="text-sm mt-2">
               Relevant code snippets will appear along with your question
@@ -36,6 +35,7 @@ export default function AnswerPanel({
                 code={snippet.code}
               />
             ))}
+            {loading && <AnimatedSkeleton />}
           </div>
         )}
       </div>

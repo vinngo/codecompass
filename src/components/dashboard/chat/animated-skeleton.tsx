@@ -2,6 +2,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
 
 const skeletonLines = [
   "100%",
@@ -19,8 +20,20 @@ const skeletonLines = [
 ];
 
 export default function AnimatedSkeleton() {
+  const skeletonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (skeletonRef.current) {
+      skeletonRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, []);
+
   return (
     <motion.div
+      ref={skeletonRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
