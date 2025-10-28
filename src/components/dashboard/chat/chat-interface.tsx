@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import MessageList from "./message-list";
 import ChatInput from "./chat-input";
 import AnswerPanel from "./answer-panel";
+import { setTimeout } from "timers";
 
 interface Message {
   id: number;
@@ -12,34 +13,18 @@ interface Message {
   timestamp: string;
 }
 
-interface Answer {
-  id: number;
-  title: string;
-  content: string;
-  source?: string;
+interface CodeSnippet {
+  file: string;
+  code: string;
 }
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [codeSnippets, setCodeSnippets] = useState<CodeSnippet[]>([]);
+  const [codeSnippetsLoading, setCodeSnippetsLoading] =
+    useState<boolean>(false);
   const [inputValue, setInputValue] = useState("");
   // replace with backend data later
-
-  /*mock data */
-  const [answers] = useState<Answer[]>([
-    {
-      id: 1,
-      title: "What is React?",
-      content: "React is a JavaScript library for building user interfaces.",
-      source: "https://reactjs.org/",
-    },
-    {
-      id: 2,
-      title: "What is TypeScript?",
-      content:
-        "TypeScript is a superset of JavaScript that adds static typing.",
-      source: "https://www.typescriptlang.org/",
-    },
-  ]);
 
   const handleSend = () => {
     if (inputValue.trim()) {
@@ -55,6 +40,19 @@ export default function ChatInterface() {
           }),
         },
       ]);
+      setCodeSnippets([
+        ...codeSnippets,
+        {
+          file: `file${codeSnippets.length + 1}.ts`,
+          code: "console.log()",
+        },
+      ]);
+      setCodeSnippetsLoading(true);
+
+      setTimeout(() => {
+        setCodeSnippetsLoading(false);
+      }, 5000);
+
       setInputValue("");
     }
   };
@@ -72,7 +70,7 @@ export default function ChatInterface() {
       </div>
 
       {/* Answers Column */}
-      <AnswerPanel answers={answers} />
+      <AnswerPanel loading={codeSnippetsLoading} codeSnippets={codeSnippets} />
     </div>
   );
 }
