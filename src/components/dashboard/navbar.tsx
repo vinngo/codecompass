@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { NavContext } from "./navcontext";
+import Image from "next/image";
 import { signOut } from "@/app/(auth)/client";
 
 export function DashboardNavbar() {
@@ -8,7 +9,13 @@ export function DashboardNavbar() {
       <div className="flex h-13 *:items-center justify-between px-5">
         <div className="flex items-center flex-row gap-5">
           {/*Replace this with our logo */}
-          <div className="h-5 w-5 rounded bg-primary" />
+          <Image
+            src="/codecompass.png"
+            alt="Logo"
+            width={40}
+            height={40}
+            className="h-10 w-10"
+          />
           <div className="font-extralight text-lg text-input">/</div>
           <NavContext />
         </div>

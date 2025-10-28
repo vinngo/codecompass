@@ -1,27 +1,41 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 
-export function NavContext() {
-  const [contextText, setContextText] = useState("");
-  const lastSegment = usePathname().split("/").pop();
+// Map route patterns to display names
+const routeDisplayNames: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/dashboard/organizations": "Organizations",
+  "/dashboard/repositories": "Repositories",
+  "/dashboard/documentation": "Documentation",
+  "/dashboard/chat": "Chat",
+  "/dashboard/new": "New Organization",
+};
 
-  useEffect(() => {
-    if (lastSegment === "organizations") {
-      setContextText("Organizations");
-    } else if (lastSegment === "repositories") {
-      setContextText("Repositories");
-    } else if (lastSegment === "documentation") {
-      setContextText("Documentation");
-    } else if (lastSegment === "chat") {
-      setContextText("Chat");
-    } else if (lastSegment === "new") {
-      setContextText("New Organization");
-    } else {
-      setContextText("New Repository");
+export function NavContext() {
+  const pathname = usePathname();
+
+  const contextText = useMemo(() => {
+    // Check for exact matches first
+    if (routeDisplayNames[pathname]) {
+      return routeDisplayNames[pathname];
     }
-  }, [lastSegment]);
+
+    // Handle dynamic routes
+    if (pathname.startsWith("/dashboard/org/")) {
+      return "Organization";
+    }
+    if (pathname.startsWith("/dashboard/repo/")) {
+      return "Repository";
+    }
+    if (pathname.startsWith("/dashboard/new/")) {
+      return "New Repository";
+    }
+
+    // Default fallback
+    return "Dashboard";
+  }, [pathname]);
 
   return (
     <span className="font-semibold text-foreground text-sm">{contextText}</span>
