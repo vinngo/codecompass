@@ -11,9 +11,11 @@ import {
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createOrg } from "@/lib/services/orgService";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function NewOrganizationForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,9 @@ export function NewOrganizationForm() {
         setError(result.error);
         return;
       }
+
+      // Invalidate organizations query to refetch fresh data
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
 
       // Redirect to organizations page after creation
       router.push("/dashboard/organizations");
