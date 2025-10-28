@@ -4,6 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
+    headers: {
+      "x-current-path": request.nextUrl.pathname,
+    },
   });
 
   const supabase = createServerClient(
@@ -20,6 +23,9 @@ export async function updateSession(request: NextRequest) {
           );
           supabaseResponse = NextResponse.next({
             request,
+            headers: {
+              "x-current-path": request.nextUrl.pathname,
+            },
           });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
