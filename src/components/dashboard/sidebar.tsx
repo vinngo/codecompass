@@ -16,7 +16,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
       <motion.aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        animate={{ width: isHovered ? 280 : 60 }}
+        animate={{ width: isHovered ? 200 : 60 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         className="h-screen bg-background border-r border-border flex flex-col overflow-hidden"
       >
@@ -37,17 +37,17 @@ export function useSidebar() {
 export function SidebarItem({
   icon,
   label,
-  onClick,
+  action,
 }: {
   icon: React.ReactNode;
   label: string;
-  onClick?: () => void;
+  action?: () => void;
 }) {
   const { isExpanded } = useSidebar();
 
   return (
     <div
-      onClick={onClick}
+      onClick={action}
       className="flex items-center gap-3 px-3 py-2 hover:bg-muted rounded-md cursor-pointer transition-colors w-full"
     >
       <div className="shrink-0 w-6 h-6 flex items-center justify-center">
