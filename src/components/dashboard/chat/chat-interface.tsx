@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import MessageList from './message-list';
-import ChatInput from './chat-input';
-import AnswerPanel from './answer-panel';
+import React, { useState } from "react";
+import MessageList from "./message-list";
+import ChatInput from "./chat-input";
+import AnswerPanel from "./answer-panel";
 
 interface Message {
   id: number;
   text: string;
-  sender: 'user' | 'assistant';
+  sender: "user" | "assistant";
   timestamp: string;
 }
 
@@ -21,19 +21,41 @@ interface Answer {
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   // replace with backend data later
-  const [answers] = useState<Answer[]>([]);
+
+  /*mock data */
+  const [answers] = useState<Answer[]>([
+    {
+      id: 1,
+      title: "What is React?",
+      content: "React is a JavaScript library for building user interfaces.",
+      source: "https://reactjs.org/",
+    },
+    {
+      id: 2,
+      title: "What is TypeScript?",
+      content:
+        "TypeScript is a superset of JavaScript that adds static typing.",
+      source: "https://www.typescriptlang.org/",
+    },
+  ]);
 
   const handleSend = () => {
     if (inputValue.trim()) {
-      setMessages([...messages, {
-        id: messages.length + 1,
-        text: inputValue,
-        sender: 'user',
-        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-      }]);
-      setInputValue('');
+      setMessages([
+        ...messages,
+        {
+          id: messages.length + 1,
+          text: inputValue,
+          sender: "user",
+          timestamp: new Date().toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
+      setInputValue("");
     }
   };
 
@@ -42,7 +64,7 @@ export default function ChatInterface() {
       {/* Chat Column */}
       <div className="flex flex-col w-1/2 border-r border-grey-800">
         <MessageList messages={messages} />
-        <ChatInput 
+        <ChatInput
           value={inputValue}
           onChange={setInputValue}
           onSend={handleSend}
