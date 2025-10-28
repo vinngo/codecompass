@@ -11,7 +11,7 @@ type RepoListProps = {
 
 export function RepoList({ organizationId }: RepoListProps) {
   const { data, isLoading, error } = useQuery<Repo[]>({
-    queryKey: ["repos"],
+    queryKey: ["repositories", organizationId],
     queryFn: async () => {
       const result = await getReposByOrganizationId(organizationId);
 

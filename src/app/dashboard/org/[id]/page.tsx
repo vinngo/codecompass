@@ -42,7 +42,7 @@ export default async function OrgPage({
   }
 
   await queryClient.prefetchQuery({
-    queryKey: ["repo"],
+    queryKey: ["repositories", id],
     queryFn: async () => {
       const result = await getReposByOrganizationId(id);
       if (!result.success) {
