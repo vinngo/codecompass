@@ -3,12 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { FolderCode } from "lucide-react";
 import { Repo } from "@/app/types/supabase";
+import { useRouter } from "next/navigation";
 
 type RepoButtonProps = {
   repo: Repo;
 };
 
 export function RepoButton({ repo }: RepoButtonProps) {
+  const router = useRouter();
   const type = repo.provider;
   const index_status = repo.index_status;
 
@@ -16,6 +18,7 @@ export function RepoButton({ repo }: RepoButtonProps) {
     <Button
       variant="outline"
       className="bg-background h-auto min-h-21 justify-start p-4 w-full"
+      onClick={() => router.push(`/dashboard/repo/${repo.id}`)}
     >
       <div className="flex flex-row gap-4 text-sm w-full overflow-hidden">
         {/* Surround in a circular container */}

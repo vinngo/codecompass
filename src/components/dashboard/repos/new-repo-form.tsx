@@ -25,6 +25,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createRepoViaGithub } from "@/lib/services/repoService";
+import { useQueryClient } from "@tanstack/react-query";
 
 type NewProjectFormProps = {
   orgId: string;
@@ -32,6 +33,7 @@ type NewProjectFormProps = {
 
 export function NewProjectForm({ orgId }: NewProjectFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
   const [type, setType] = useState("local");
@@ -58,6 +60,9 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
           setIsLoading(false);
           return;
         }
+
+        // Invalidate repositories query to refetch fresh data
+        queryClient.invalidateQueries({ queryKey: ["repositories", orgId] });
 
         router.push(`/dashboard/org/${orgId}`);
       } catch (err) {
