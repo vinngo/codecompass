@@ -7,7 +7,6 @@ export default async function RepoPage({
 }) {
   return (
     <div>
-      {/*Left-side navbar*/}
       {/*Docs Page*/}
       <ChatInterface />
     </div>
