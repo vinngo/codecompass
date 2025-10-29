@@ -6,6 +6,7 @@ export default async function RepoPage({
   params: Promise<{ id: string }>;
 }) {
   return (
+    //prefetch documentation and conversations
     <div>
       {/*Docs Page*/}
       <ChatInterface />

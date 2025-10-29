@@ -1,6 +1,8 @@
 "use client";
+import dynamic from "next/dynamic";
 import Hero from "./hero";
-import Footer from "./footer";
+
+const Footer = dynamic(() => import("./footer"));
 
 export default function LandingPage() {
   return (
