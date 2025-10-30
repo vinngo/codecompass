@@ -47,7 +47,7 @@ export default function DocumentationViewer() {
 
 ## Purpose and Scope
 
-This document provides a high-level overview of VS Code's architecture, focusing on the multi-process design, core systems, and how major components interact. It explains the separation between the main process, renderer process, extension host, and specialized processes, as well as the foundational services and dependency injection patterns used throughout the codebase.
+This document provides a high-level overview of VS Code architecture, focusing on the multi-process design, core systems, and how major components interact. It explains the separation between the main process, renderer process, extension host, and specialized processes, as well as the foundational services and dependency injection patterns used throughout the codebase.
 
 For detailed information about specific subsystems:
 
