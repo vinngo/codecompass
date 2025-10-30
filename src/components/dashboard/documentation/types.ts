@@ -8,7 +8,7 @@ export interface Page {
   parent_page_id: string | null;
   referenced_files: string[] | null;
   referenced_symbols: string[] | null;
-  metadata: Record<string, any> | null;
+  metadata: JSON | null;
   created_at: string;
   updated_at: string;
 }
