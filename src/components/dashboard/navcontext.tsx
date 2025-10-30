@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { useNavBarStore } from "@/lib/stores/useNavbarStore";
+import Link from "next/link";
 
 // Map route patterns to display names
 const routeDisplayNames: Record<string, string> = {
@@ -15,8 +17,10 @@ const routeDisplayNames: Record<string, string> = {
 
 export function NavContext() {
   const pathname = usePathname();
+  const { contextText, breadcrumbs } = useNavBarStore();
 
-  const contextText = useMemo(() => {
+  // Derive context from URL as fallback
+  const defaultContext = useMemo(() => {
     // Check for exact matches first
     if (routeDisplayNames[pathname]) {
       return routeDisplayNames[pathname];
@@ -37,7 +41,38 @@ export function NavContext() {
     return "Dashboard";
   }, [pathname]);
 
+  // If breadcrumbs are set, display them
+  if (breadcrumbs && breadcrumbs.length > 0) {
+    return (
+      <div className="flex items-center gap-2">
+        {breadcrumbs.map((crumb, index) => (
+          <div key={index} className="flex items-center gap-2">
+            {crumb.href ? (
+              <Link
+                href={crumb.href}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {crumb.label}
+              </Link>
+            ) : (
+              <span className="font-semibold text-foreground text-sm">
+                {crumb.label}
+              </span>
+            )}
+            {index < breadcrumbs.length - 1 && (
+              <span className="text-muted-foreground">/</span>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Use store context if it's not the default, otherwise use URL-based fallback
+  const displayText =
+    contextText !== "Dashboard" ? contextText : defaultContext;
+
   return (
-    <span className="font-semibold text-foreground text-sm">{contextText}</span>
+    <span className="font-semibold text-foreground text-sm">{displayText}</span>
   );
 }
