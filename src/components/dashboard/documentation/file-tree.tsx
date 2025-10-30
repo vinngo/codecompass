@@ -11,7 +11,7 @@ interface Page {
   parent_page_id: string | null;
   referenced_files: string[] | null;
   referenced_symbols: string[] | null;
-  metadata: Record<string, any> | null;
+  metadata: JSON | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,31 +41,37 @@ export function FileTreeSidebar({
   onToggleExpanded,
   onSearchChange,
 }: FileTreeSidebarProps) {
-  const filterNodes = (nodes: FileTreeNode[], query: string): FileTreeNode[] => {
+  const filterNodes = (
+    nodes: FileTreeNode[],
+    query: string,
+  ): FileTreeNode[] => {
     if (!query) return nodes;
-    
+
     const lowerQuery = query.toLowerCase();
     const filtered: FileTreeNode[] = [];
-    
-    nodes.forEach(node => {
+
+    nodes.forEach((node) => {
       const matchesSearch = node.title.toLowerCase().includes(lowerQuery);
       const filteredChildren = filterNodes(node.children, query);
-      
+
       if (matchesSearch || filteredChildren.length > 0) {
         filtered.push({
           ...node,
-          children: filteredChildren
+          children: filteredChildren,
         });
       }
     });
-    
+
     return filtered;
   };
 
   const filteredTree = filterNodes(fileTree, searchQuery);
 
-  const renderFileTree = (nodes: FileTreeNode[], level: number = 0): JSX.Element[] => {
-    return nodes.map(node => {
+  const renderFileTree = (
+    nodes: FileTreeNode[],
+    level: number = 0,
+  ): JSX.Element[] => {
+    return nodes.map((node) => {
       const hasChildren = node.children.length > 0;
       const isExpanded = searchQuery ? true : expandedNodes.has(node.id);
       const isSelected = selectedFile?.id === node.id;
@@ -81,8 +87,8 @@ export function FileTreeSidebar({
             }}
             className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm transition-colors rounded ${
               isSelected
-                ? 'bg-gray-800 text-white'
-                : 'text-gray-400 hover:bg-gray-900/50 hover:text-gray-300'
+                ? "bg-gray-800 text-white"
+                : "text-gray-400 hover:bg-gray-900/50 hover:text-gray-300"
             }`}
             style={{ paddingLeft: `${level * 12 + 8}px` }}
           >
