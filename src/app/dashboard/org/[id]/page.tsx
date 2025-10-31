@@ -12,6 +12,7 @@ import { Repo } from "@/app/types/supabase";
 import { redirect } from "next/navigation";
 import { RepoList } from "@/components/dashboard/repos/list";
 import OrgHeader from "@/components/dashboard/repos/org-header";
+import { NavbarContextSetter } from "@/components/dashboard/navbar-context-setter";
 
 export default async function OrgPage({
   params,
@@ -41,6 +42,13 @@ export default async function OrgPage({
     redirect("/dashboard/organizations");
   }
 
+  // Fetch organization details for navbar breadcrumbs
+  const { data: orgDetails } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", id)
+    .single();
+
   await queryClient.prefetchQuery({
     queryKey: ["repositories", id],
     queryFn: async () => {
@@ -55,10 +63,16 @@ export default async function OrgPage({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
+      <NavbarContextSetter
+        breadcrumbs={[
+          { label: "Organizations", href: "/dashboard/organizations" },
+          { label: orgDetails?.name || "Organization" },
+        ]}
+      />
       <div className="container mx-auto py-8 px-4">
         {/* Header Section */}
         <div className="flex items-center justify-between mb-8">
-          <OrgHeader orgId={org.organization_id} />
+          <OrgHeader orgName={orgDetails?.name || "Organization"} />
           <Button variant="default" size="sm">
             <Link href={`/dashboard/new/${id}`}>
               <div className="flex items-center gap-1">

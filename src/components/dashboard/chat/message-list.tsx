@@ -1,18 +1,19 @@
-import React from 'react';
-import MessageBubble from './message-bubble';
+import AnimatedSkeleton from "./animated-skeleton";
+import MessageBubble from "./message-bubble";
 
 interface Message {
   id: number;
   text: string;
-  sender: 'user' | 'assistant';
+  sender: "user" | "assistant";
   timestamp: string;
 }
 
 interface MessageListProps {
   messages: Message[];
+  loading: boolean;
 }
 
-export default function MessageList({ messages }: MessageListProps) {
+export default function MessageList({ messages, loading }: MessageListProps) {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-3xl mx-auto px-4 py-4">
@@ -25,6 +26,7 @@ export default function MessageList({ messages }: MessageListProps) {
             timestamp={message.timestamp}
           />
         ))}
+        {loading && <AnimatedSkeleton />}
       </div>
     </div>
   );
