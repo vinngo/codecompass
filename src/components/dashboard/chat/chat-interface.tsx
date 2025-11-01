@@ -34,7 +34,7 @@ export default function ChatInterface() {
   const [chatInputDisabled, setChatInputDisabled] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState("");
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (chatInputDisabled) return;
 
     if (inputValue.trim()) {
@@ -72,22 +72,33 @@ export default function ChatInterface() {
 
       setInputValue("");
 
-      setTimeout(() => {
-        //simulate LLM response
+      try {
+        // Call the Next.js API endpoint
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: userQuestion,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to get response from chat API");
+        }
+
+        // Parse the JSON response
+        const data = await response.json();
+        const responseText =
+          data.response || "Sorry, I couldn't process your request.";
+
+        // Add assistant response to messages
         setMessages((prevMessages) => [
           ...prevMessages,
           {
             id: prevMessages.length + 1,
-            text: `Hello! I'm an AI assistant. I can help you understand and navigate the codebase.
-
-Since you're asking about this repository, I can help you with questions about:
-
-- Architecture and design patterns
-- Code organization and structure
-- Specific implementations and how they work
-- Relationships between different components
-
-Feel free to ask me specific questions about how the code works, where certain functionality is implemented, or how different components interact with each other!`,
+            text: responseText,
             sender: "assistant",
             timestamp: new Date().toLocaleTimeString("en-US", {
               hour: "2-digit",
@@ -96,78 +107,51 @@ Feel free to ask me specific questions about how the code works, where certain f
           },
         ]);
 
-        // Update the conversation turn with code snippets
+        // Update the conversation turn with code snippets (if provided by backend)
         setConversationTurns((prevTurns) =>
           prevTurns.map((turn) =>
             turn.id === turnId
               ? {
                   ...turn,
                   loading: false,
-                  codeSnippets: [
-                    {
-                      file: `example-${turnId}.ts`,
-                      code: `"use client";
-
-import React, { useState } from "react";
-import MessageList from "./message-list";
-import ChatInput from "./chat-input";
-import AnswerPanel from "./answer-panel";
-
-interface Message {
-  id: number;
-  text: string;
-  sender: "user" | "assistant";
-  timestamp: string;
-}
-
-interface CodeSnippet {
-  file: string;
-  code: string;
-}
-
-export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState("");
-
-  const handleSend = () => {
-    if (inputValue.trim()) {
-      setMessages([
-        ...messages,
-        {
-          id: messages.length + 1,
-          text: inputValue,
-          sender: "user",
-          timestamp: new Date().toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        },
-      ]);
-
-      setInputValue("");
-    }
-  };
-
-  return (
-    <div className="flex h-[calc(100vh-64px)]">
-      <MessageList messages={messages} />
-      <ChatInput
-        value={inputValue}
-        onChange={setInputValue}
-        onSend={handleSend}
-      />
-    </div>
-  );
-}`,
-                    },
-                  ],
+                  codeSnippets: data.codeSnippets || [],
                 }
               : turn,
           ),
         );
+      } catch (error) {
+        console.error("Error sending message:", error);
+
+        // Add error message to chat
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            id: prevMessages.length + 1,
+            text: "Sorry, there was an error processing your request. Please try again.",
+            sender: "assistant",
+            timestamp: new Date().toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          },
+        ]);
+
+        // Update turn to show error state
+        setConversationTurns((prevTurns) =>
+          prevTurns.map((turn) =>
+            turn.id === turnId
+              ? {
+                  ...turn,
+                  loading: false,
+                  codeSnippets: [],
+                }
+              : turn,
+          ),
+        );
+      } finally {
         setResponseLoading(false);
         setChatInputDisabled(false);
-      }, 5000);
+      }
     }
   };
 
