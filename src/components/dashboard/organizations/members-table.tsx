@@ -79,10 +79,9 @@ export function MembersTable({ organizationId }: MembersTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Joined</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="text-muted-foreground">Email</TableHead>
+            <TableHead className="text-muted-foreground">Role</TableHead>
+            <TableHead className="text-muted-foreground">Joined</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
