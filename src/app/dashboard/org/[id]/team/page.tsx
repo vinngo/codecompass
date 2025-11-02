@@ -11,6 +11,7 @@ import { OrganizationMember } from "@/app/types/supabase";
 import { redirect } from "next/navigation";
 import { MembersTable } from "@/components/dashboard/organizations/members-table";
 import { NavbarContextSetter } from "@/components/dashboard/navbar-context-setter";
+import { InviteMemberDialog } from "@/components/dashboard/organizations/invite-member-dialog";
 
 export default async function TeamPage({
   params,
@@ -82,10 +83,15 @@ export default async function TeamPage({
               Manage members and their roles in this organization
             </p>
           </div>
-          <Button variant="default" size="sm" disabled>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Invite Member
-          </Button>
+          <InviteMemberDialog
+            organizationId={id}
+            organizationName={orgDetails?.name || "Organization"}
+          >
+            <Button variant="default" size="sm">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Invite Member
+            </Button>
+          </InviteMemberDialog>
         </div>
 
         {/* Members Table */}
