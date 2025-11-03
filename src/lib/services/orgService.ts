@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 import {
   Organization,
   OrganizationWithRole,
@@ -315,8 +315,9 @@ export async function acceptInvite(
     return { success: false, error: "Failed to join organization" };
   }
 
-  // 6. Mark invite as used
-  const { error: updateError } = await supabase
+  // 6. Mark invite as used (using admin client with secret key to bypass RLS)
+  const adminClient = createAdminClient();
+  const { error: updateError } = await adminClient
     .from("organization_invites")
     .update({
       used_at: new Date().toISOString(),
