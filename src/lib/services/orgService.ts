@@ -187,3 +187,150 @@ export async function createOrg(
 
   return { success: true, data: organization };
 }
+
+export async function createInviteLink(
+  organizationId: string,
+): Promise<ActionResult<{ token: string; expiresAt: string }>> {
+  const supabase = await createClient();
+
+  //authenticate user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated!" };
+  }
+
+  //check membership
+  const { data: userOrg, error: accessError } = await supabase
+    .from("user_organizations")
+    .select("organization_id, role")
+    .eq("organization_id", organizationId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (accessError || !userOrg) {
+    return {
+      success: false,
+      error: "User does not have access to this organization!",
+    };
+  }
+
+  //generate a secure token
+
+  const token = crypto.randomUUID();
+
+  //calculate expiry date
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  //store the invite in supa
+
+  const { error: inviteError } = await supabase
+    .from("organization_invites")
+    .insert({
+      organization_id: organizationId,
+      created_by: user.id,
+      token,
+      expires_at: expiresAt.toISOString(),
+    });
+
+  if (inviteError) {
+    console.error("Failed to create invite:", inviteError);
+    return { success: false, error: "Failed to create invite link" };
+  }
+
+  return {
+    success: true,
+    data: {
+      token,
+      expiresAt: expiresAt.toISOString(),
+    },
+  };
+}
+
+export async function acceptInvite(
+  token: string,
+): Promise<ActionResult<{ organizationId: string }>> {
+  const supabase = await createClient();
+
+  // 1. Authenticate user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      success: false,
+      error: "You must be logged in to accept an invite",
+    };
+  }
+
+  // 2. Fetch and validate invite (with locking to prevent race conditions)
+  const { data: invite, error: inviteError } = await supabase
+    .from("organization_invites")
+    .select("*")
+    .eq("token", token)
+    .is("used_at", null) // Only get unused invites
+    .single();
+
+  if (inviteError || !invite) {
+    return { success: false, error: "Invalid or expired invite link" };
+  }
+
+  // 3. Check expiration
+  const now = new Date();
+  const expiresAt = new Date(invite.expires_at);
+  if (now > expiresAt) {
+    return { success: false, error: "This invite has expired" };
+  }
+
+  // 4. Check if user is already a member
+  const { data: existingMembership } = await supabase
+    .from("user_organizations")
+    .select("organization_id")
+    .eq("organization_id", invite.organization_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (existingMembership) {
+    return {
+      success: false,
+      error: "You are already a member of this organization",
+    };
+  }
+
+  // 5. Add user to organization
+  const { error: membershipError } = await supabase
+    .from("user_organizations")
+    .insert({
+      user_id: user.id,
+      organization_id: invite.organization_id,
+      role: "teammate", // Default role for invited users
+    });
+
+  if (membershipError) {
+    console.error("Failed to add user to organization:", membershipError);
+    return { success: false, error: "Failed to join organization" };
+  }
+
+  // 6. Mark invite as used
+  const { error: updateError } = await supabase
+    .from("organization_invites")
+    .update({
+      used_at: new Date().toISOString(),
+      used_by: user.id,
+    })
+    .eq("token", token);
+
+  if (updateError) {
+    console.error("Failed to mark invite as used:", updateError);
+    // Don't return error - user was already added successfully
+  }
+
+  return {
+    success: true,
+    data: { organizationId: invite.organization_id },
+  };
+}
