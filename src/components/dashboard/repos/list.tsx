@@ -4,6 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Repo } from "@/app/types/supabase";
 import { getReposByOrganizationId } from "@/lib/services/repoService";
 import { RepoButton } from "./card";
+import { Empty } from "@/components/ui/empty";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 
 type RepoListProps = {
   organizationId: string;
@@ -32,7 +36,23 @@ export function RepoList({ organizationId }: RepoListProps) {
   }
 
   if (!data || data.length === 0) {
-    return <div>No repositories found.</div>;
+    //where i'm gonna add the empty
+    // for /dashboard/new/${id} , figure out how to get the id
+    return (
+      <Empty
+        title="No Team Members"
+        description="You havent added any repositories yet"
+      >
+        <Button variant="default" size="sm">
+          <Link href={`/dashboard/new/hello`}>
+            <div className="flex items-center gap-1">
+              <Plus />
+              <span>New repository</span>
+            </div>
+          </Link>
+        </Button>
+      </Empty>
+    );
   }
 
   return (
