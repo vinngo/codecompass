@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Copy, Check, RefreshCw } from "lucide-react";
+import { createInviteLink } from "@/lib/services/orgService";
 
 type InviteMemberDialogProps = {
   organizationId: string;
@@ -29,28 +30,32 @@ export function InviteMemberDialog({
   const [isGenerating, setIsGenerating] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const generateInviteLink = async () => {
     setIsGenerating(true);
+    setError(null);
 
-    // TODO: Call server action to create invite token
-    // const result = await createInviteLink(organizationId);
-    // if (result.success) {
-    //   const link = `${window.location.origin}/invite/${organizationId}/${result.data.token}`;
-    //   setInviteLink(link);
-    //   setExpiresAt(result.data.expiresAt);
-    // }
+    try {
+      // Call server action to create invite token
+      const result = await createInviteLink(organizationId);
 
-    // Placeholder implementation
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const token = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    const link = `${window.location.origin}/invite/${organizationId}/${token}`;
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 7);
+      if (!result.success) {
+        setError(result.error);
+        setIsGenerating(false);
+        return;
+      }
 
-    setInviteLink(link);
-    setExpiresAt(expires.toISOString());
-    setIsGenerating(false);
+      // Build full URL with token
+      const link = `${window.location.origin}/invite/${result.data.token}`;
+      setInviteLink(link);
+      setExpiresAt(result.data.expiresAt);
+    } catch (err) {
+      console.error("Failed to generate invite link:", err);
+      setError("Failed to generate invite link. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleCopy = async () => {
@@ -101,6 +106,11 @@ export function InviteMemberDialog({
                 Click the button below to generate a secure, one-time use invite
                 link.
               </p>
+              {error && (
+                <div className="w-full p-3 bg-destructive/10 text-destructive text-sm rounded-md text-center">
+                  {error}
+                </div>
+              )}
               <Button
                 onClick={generateInviteLink}
                 disabled={isGenerating}
