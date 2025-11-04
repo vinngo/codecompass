@@ -95,7 +95,7 @@ export default async function TeamPage({
         </div>
 
         {/* Members Table */}
-        <MembersTable organizationId={id} />
+        <MembersTable userId={user.id} organizationId={id} />
       </div>
     </HydrationBoundary>
   );

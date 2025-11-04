@@ -1,6 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { EllipsisVertical } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { OrganizationMember } from "@/app/types/supabase";
 import { getOrgMembers } from "@/lib/services/orgService";
 import {
@@ -11,12 +13,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useEffect, useState } from "react";
 
 type MembersTableProps = {
   organizationId: string;
+  userId: string;
 };
 
-export function MembersTable({ organizationId }: MembersTableProps) {
+export function MembersTable({ organizationId, userId }: MembersTableProps) {
+  const [owners, setOwners] = useState<OrganizationMember[]>([]);
   const { data, isLoading, error } = useQuery<OrganizationMember[]>({
     queryKey: ["members", organizationId],
     queryFn: async () => {
@@ -29,6 +34,13 @@ export function MembersTable({ organizationId }: MembersTableProps) {
       return result.data;
     },
   });
+
+  useEffect(() => {
+    if (data) {
+      const owner = data.find((member) => member.role === "owner");
+      setOwners(owner ? [owner] : []);
+    }
+  }, [data]);
 
   if (isLoading) {
     return (
@@ -102,11 +114,28 @@ export function MembersTable({ organizationId }: MembersTableProps) {
               <TableCell className="text-muted-foreground">
                 {formatDate(member.joined_at)}
               </TableCell>
-              <TableCell className="text-right">
-                <span className="text-xs text-muted-foreground">
-                  {/* Placeholder for future actions (remove, change role, etc.) */}
-                  —
-                </span>
+              <TableCell>
+                <div className="flex justify-end items-center gap-2">
+                  {member.role === "owner" && member.user_id === userId ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={owners.length <= 1}
+                      className="mr-1"
+                    >
+                      Leave organization
+                    </Button>
+                  ) : (
+                    <>
+                      <Button variant="outline" size="sm">
+                        Manage role
+                      </Button>
+                      <Button variant="ghost" size="icon-sm">
+                        <EllipsisVertical className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}
