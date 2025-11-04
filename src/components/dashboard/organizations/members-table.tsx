@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { EllipsisVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { OrganizationMember } from "@/app/types/supabase";
+import { OrganizationMember, User } from "@/app/types/supabase";
 import { getOrgMembers } from "@/lib/services/orgService";
 import {
   Table,
@@ -14,14 +14,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/app/dashboard/dashboard-provider";
 
 type MembersTableProps = {
   organizationId: string;
-  userId: string;
 };
 
-export function MembersTable({ organizationId, userId }: MembersTableProps) {
-  const [owners, setOwners] = useState<OrganizationMember[]>([]);
+export function MembersTable({ organizationId }: MembersTableProps) {
+  // Get userId from React Query cache via useAuth hook
+  const { user } = useAuth();
+  const userId = user?.id;
+
+  const [ownerIds, setOwnerIds] = useState<Set<string | undefined>>(new Set());
   const { data, isLoading, error } = useQuery<OrganizationMember[]>({
     queryKey: ["members", organizationId],
     queryFn: async () => {
@@ -37,8 +41,8 @@ export function MembersTable({ organizationId, userId }: MembersTableProps) {
 
   useEffect(() => {
     if (data) {
-      const owner = data.find((member) => member.role === "owner");
-      setOwners(owner ? [owner] : []);
+      const owners = data.filter((member) => member.role === "owner");
+      setOwnerIds(new Set(owners.map((owner) => owner.user_id)));
     }
   }, [data]);
 
@@ -116,16 +120,16 @@ export function MembersTable({ organizationId, userId }: MembersTableProps) {
               </TableCell>
               <TableCell>
                 <div className="flex justify-end items-center gap-2">
-                  {member.role === "owner" && member.user_id === userId ? (
+                  {ownerIds.has(userId) && member.user_id === userId ? (
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={owners.length <= 1}
+                      disabled={ownerIds.size <= 1}
                       className="mr-1"
                     >
                       Leave organization
                     </Button>
-                  ) : (
+                  ) : member.role === "teammate" && ownerIds.has(userId) ? (
                     <>
                       <Button variant="outline" size="sm">
                         Manage role
@@ -134,6 +138,13 @@ export function MembersTable({ organizationId, userId }: MembersTableProps) {
                         <EllipsisVertical className="h-4 w-4" />
                       </Button>
                     </>
+                  ) : member.role === "teammate" &&
+                    member.user_id === userId ? (
+                    <Button variant="outline" size="sm" className="mr-1">
+                      Leave organization
+                    </Button>
+                  ) : (
+                    <> </>
                   )}
                 </div>
               </TableCell>
