@@ -12,6 +12,7 @@ import { redirect } from "next/navigation";
 import { MembersTable } from "@/components/dashboard/organizations/members-table";
 import { NavbarContextSetter } from "@/components/dashboard/navbar-context-setter";
 import { InviteMemberDialog } from "@/components/dashboard/organizations/invite-member-dialog";
+import { prefetchOrgData } from "@/lib/services/orgCache";
 
 export default async function TeamPage({
   params,
@@ -30,25 +31,13 @@ export default async function TeamPage({
     redirect("/login");
   }
 
-  // Verify user has access to this organization
-  const { data: org, error } = await supabase
-    .from("user_organizations")
-    .select("organization_id, role")
-    .eq("organization_id", id)
-    .eq("user_id", user.id)
-    .single();
+  // Fetch org access and details in parallel (with caching)
+  const orgData = await prefetchOrgData(id, user.id, queryClient);
 
-  if (!org || error) {
+  if (!orgData.access) {
     console.error("Organization not found or access denied");
     redirect("/dashboard/organizations");
   }
-
-  // Fetch organization details for navbar breadcrumbs
-  const { data: orgDetails } = await supabase
-    .from("organizations")
-    .select("name")
-    .eq("id", id)
-    .single();
 
   // Prefetch members data for React Query
   await queryClient.prefetchQuery({
@@ -68,7 +57,7 @@ export default async function TeamPage({
         breadcrumbs={[
           { label: "Organizations", href: "/dashboard/organizations" },
           {
-            label: orgDetails?.name || "Organization",
+            label: orgData.details?.name || "Organization",
             href: `/dashboard/org/${id}`,
           },
           { label: "Team" },
@@ -85,7 +74,7 @@ export default async function TeamPage({
           </div>
           <InviteMemberDialog
             organizationId={id}
-            organizationName={orgDetails?.name || "Organization"}
+            organizationName={orgData.details?.name || "Organization"}
           >
             <Button variant="default" size="sm">
               <UserPlus className="mr-2 h-4 w-4" />
