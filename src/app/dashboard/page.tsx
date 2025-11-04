@@ -3,9 +3,11 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useAuth } from "./dashboard-provider";
+import { usePrefetchRoute } from "@/hooks/usePrefetchRoute";
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { prefetchOrganizationsPage } = usePrefetchRoute();
 
   return (
     <div className="container py-8 px-4">
@@ -22,8 +24,11 @@ export default function DashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Link href="/dashboard/organizations">
-            <div className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer">
+          <Link href="/dashboard/organizations" prefetch={true}>
+            <div
+              className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors cursor-pointer"
+              onMouseEnter={() => prefetchOrganizationsPage()}
+            >
               <h2 className="text-xl font-semibold text-card-foreground mb-2">
                 Organizations
               </h2>

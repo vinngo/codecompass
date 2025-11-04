@@ -16,11 +16,17 @@ export function RepoButton({ repo }: RepoButtonProps) {
   const type = repo.provider;
   const index_status = repo.index_status;
 
+  const handlePrefetch = () => {
+    // Prefetch repo page route
+    router.prefetch(`/dashboard/repo/${repo.id}`);
+  };
+
   return (
     <Button
       variant="outline"
       className="bg-background h-auto min-h-21 justify-start p-4 w-full"
       onClick={() => router.push(`/dashboard/repo/${repo.id}`)}
+      onMouseEnter={handlePrefetch}
     >
       <div className="flex flex-row gap-4 text-sm w-full overflow-hidden">
         {/* Surround in a circular container */}
