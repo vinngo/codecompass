@@ -39,19 +39,21 @@ export function RepoList({ organizationId }: RepoListProps) {
     //where i'm gonna add the empty
     // for /dashboard/new/${id} , figure out how to get the id
     return (
-      <Empty
-        title="No Team Members"
-        description="You havent added any repositories yet"
-      >
-        <Button variant="default" size="sm">
-          <Link href={`/dashboard/new/hello`}>
-            <div className="flex items-center gap-1">
-              <Plus />
-              <span>New repository</span>
-            </div>
-          </Link>
-        </Button>
-      </Empty>
+      <div className="flex justify-center items-center scale-150 mt-80">
+        <Empty
+          title="You Have No Repositories"
+          description="Upload a repository to get started"
+        >
+          <Button variant="default" size="sm">
+            <Link href={`/dashboard/new/${organizationId}`}>
+              <div className="flex items-center gap-1">
+                <Plus />
+                <span>New repository</span>
+              </div>
+            </Link>
+          </Button>
+        </Empty>
+      </div>
     );
   }
 
