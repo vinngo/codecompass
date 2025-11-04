@@ -131,7 +131,7 @@ export async function getOrgMembers(
     return {
       user_id: m.user_id,
       organization_id: m.organization_id,
-      role: m.role as "owner" | "member",
+      role: m.role as "owner" | "teammate",
       joined_at: m.joined_at,
       user_email: email,
     };
