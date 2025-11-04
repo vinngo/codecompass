@@ -1,12 +1,11 @@
-import { createClient } from "@/utils/supabase/server";
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useAuth } from "./dashboard-provider";
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function DashboardPage() {
+  const { user } = useAuth();
 
   return (
     <div className="container py-8 px-4">
@@ -53,7 +52,9 @@ export default async function DashboardPage() {
           <h2 className="text-xl font-semibold text-card-foreground mb-4">
             Recent Activity
           </h2>
-          <p className="text-muted-foreground">No recent activity to display.</p>
+          <p className="text-muted-foreground">
+            No recent activity to display.
+          </p>
         </div>
       </div>
     </div>

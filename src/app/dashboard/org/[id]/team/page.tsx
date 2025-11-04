@@ -5,7 +5,6 @@ import {
   QueryClient,
   dehydrate,
 } from "@tanstack/react-query";
-import { createClient } from "@/utils/supabase/server";
 import { getOrgMembers } from "@/lib/services/orgService";
 import { OrganizationMember } from "@/app/types/supabase";
 import { redirect } from "next/navigation";
@@ -20,19 +19,11 @@ export default async function TeamPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
   const queryClient = new QueryClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
   // Fetch org access and details in parallel (with caching)
-  const orgData = await prefetchOrgData(id, user.id, queryClient);
+  // User auth is handled by layout, MembersTable gets userId from cache
+  const orgData = await prefetchOrgData(id, queryClient);
 
   if (!orgData.access) {
     console.error("Organization not found or access denied");
@@ -67,7 +58,7 @@ export default async function TeamPage({
         {/* Header Section */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold">Team</h1>
+            <h1 className="text-2xl">Team</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Manage members and their roles in this organization
             </p>
@@ -84,7 +75,7 @@ export default async function TeamPage({
         </div>
 
         {/* Members Table */}
-        <MembersTable userId={user.id} organizationId={id} />
+        <MembersTable organizationId={id} />
       </div>
     </HydrationBoundary>
   );
