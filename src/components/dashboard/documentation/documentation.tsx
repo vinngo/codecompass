@@ -8,7 +8,6 @@ import { RefreshModal } from './refresh-modal';
 import { Page, FileTreeNode, Heading } from './types';
 import { buildFileTree, extractHeadings } from './utils';
 
-
 export default function DocumentationViewer() {
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<Page | null>(null);
@@ -116,6 +115,7 @@ The initialization sequence defines the startup order of all components.`,
           metadata: null,
           created_at: '2025-10-19T00:00:00Z',
           updated_at: '2025-10-19T00:00:00Z',
+          version: 1,
         },
         {
           id: '2',
@@ -130,6 +130,7 @@ The initialization sequence defines the startup order of all components.`,
           metadata: null,
           created_at: '2025-10-19T00:00:00Z',
           updated_at: '2025-10-19T00:00:00Z',
+          version: 1,
         },
         {
           id: '3',
@@ -144,6 +145,7 @@ The initialization sequence defines the startup order of all components.`,
           metadata: null,
           created_at: '2025-10-19T00:00:00Z',
           updated_at: '2025-10-19T00:00:00Z',
+          version: 1,
         },
         {
           id: '4',
@@ -158,6 +160,7 @@ The initialization sequence defines the startup order of all components.`,
           metadata: null,
           created_at: '2025-10-19T00:00:00Z',
           updated_at: '2025-10-19T00:00:00Z',
+          version: 1,
         },
       ];
 
