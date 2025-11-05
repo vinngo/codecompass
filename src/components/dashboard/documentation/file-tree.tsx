@@ -93,18 +93,24 @@ export function FileTreeSidebar({
             style={{ paddingLeft: `${level * 12 + 8}px` }}
           >
             {hasChildren ? (
-              isExpanded ? (
-                <ChevronDown className="w-3 h-3 flex-shrink-0" />
-              ) : (
+              <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
                 <ChevronRight className="w-3 h-3 flex-shrink-0" />
-              )
+              </div>
             ) : (
               <div className="w-3" />
             )}
             <span className="truncate text-xs">{node.title}</span>
           </button>
-          {hasChildren && isExpanded && (
-            <div>{renderFileTree(node.children, level + 1)}</div>
+          {hasChildren && (
+            <div 
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="pt-1">
+                {renderFileTree(node.children, level + 1)}
+              </div>
+            </div>
           )}
         </div>
       );
