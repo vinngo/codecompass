@@ -7,7 +7,7 @@ import { RepoButton } from "./card";
 import { Empty } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { FolderPlus, Plus } from "lucide-react";
 
 type RepoListProps = {
   organizationId: string;
@@ -42,7 +42,8 @@ export function RepoList({ organizationId }: RepoListProps) {
       <div className="flex justify-center items-center scale-150 mt-80">
         <Empty
           title="You Have No Repositories"
-          description="Upload a repository to get started"
+          description="Index a repository to get started"
+          icon={<FolderPlus className="w-6 h-6 text-muted-foreground" />}
         >
           <Button variant="default" size="sm">
             <Link href={`/dashboard/new/${organizationId}`}>
