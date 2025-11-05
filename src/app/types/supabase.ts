@@ -70,3 +70,11 @@ export type ConversationMessage = {
   content: string;
   role: "user" | "assistant";
 };
+
+export type OrganizationMember = {
+  user_id: string;
+  organization_id: string;
+  role: "owner" | "teammate";
+  joined_at: string;
+  user_email: string;
+};

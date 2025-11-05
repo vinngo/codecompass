@@ -28,7 +28,7 @@ export default async function OrganizationsPage() {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl text-foreground">Your Organizations</h1>
           <Button variant="default" size="sm">
-            <Link href="/dashboard/new">
+            <Link href="/dashboard/new" prefetch={true}>
               <div className="flex items-center gap-1">
                 <Plus />
                 <span>New organization</span>

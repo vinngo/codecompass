@@ -50,6 +50,7 @@ export function NavContext() {
             {crumb.href ? (
               <Link
                 href={crumb.href}
+                prefetch={true}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {crumb.label}
