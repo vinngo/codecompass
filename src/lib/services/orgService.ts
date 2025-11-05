@@ -400,6 +400,69 @@ export async function removeMemberFromOrg(
   return { success: true, data: undefined };
 }
 
+export async function leaveOrganization(
+  organizationId: string,
+): Promise<ActionResult<void>> {
+  const supabase = await createClient();
+
+  // 1. Authenticate user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated" };
+  }
+
+  // 2. Verify user is a member of this organization
+  const { data: membership, error: membershipError } = await supabase
+    .from("user_organizations")
+    .select("role")
+    .eq("organization_id", organizationId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (membershipError || !membership) {
+    return {
+      success: false,
+      error: "You are not a member of this organization",
+    };
+  }
+
+  // 3. If user is an owner, check if they're the last owner
+  if (membership.role === "owner") {
+    const { data: owners, error: ownersError } = await supabase
+      .from("user_organizations")
+      .select("user_id")
+      .eq("organization_id", organizationId)
+      .eq("role", "owner");
+
+    if (ownersError) {
+      return { success: false, error: "Failed to verify ownership status" };
+    }
+
+    if (owners && owners.length <= 1) {
+      return {
+        success: false,
+        error: "Cannot leave as the last owner. Transfer ownership first.",
+      };
+    }
+  }
+
+  // 4. Remove the user from the organization
+  const { error: deleteError } = await supabase
+    .from("user_organizations")
+    .delete()
+    .eq("organization_id", organizationId)
+    .eq("user_id", user.id);
+
+  if (deleteError) {
+    return { success: false, error: "Failed to leave organization" };
+  }
+
+  return { success: true, data: undefined };
+}
+
 export async function updateMemberRole(
   organizationId: string,
   userIdToUpdate: string,

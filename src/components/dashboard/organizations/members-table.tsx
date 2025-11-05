@@ -8,7 +8,9 @@ import {
   getOrgMembers,
   removeMemberFromOrg,
   updateMemberRole,
+  leaveOrganization,
 } from "@/lib/services/orgService";
+import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -76,6 +78,7 @@ export function MembersTable({ organizationId }: MembersTableProps) {
   const { user } = useAuth();
   const userId = user?.id;
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [ownerIds, setOwnerIds] = useState<Set<string | undefined>>(new Set());
   const [removingMember, setRemovingMember] =
@@ -90,6 +93,10 @@ export function MembersTable({ organizationId }: MembersTableProps) {
   );
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+
+  const [isLeavingDialogOpen, setIsLeavingDialogOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery<OrganizationMember[]>({
     queryKey: ["members", organizationId],
@@ -226,6 +233,28 @@ export function MembersTable({ organizationId }: MembersTableProps) {
     setUpdateError(null);
   };
 
+  const handleLeaveOrganization = async () => {
+    setIsLeaving(true);
+    setLeaveError(null);
+
+    try {
+      const result = await leaveOrganization(organizationId);
+
+      if (!result.success) {
+        setLeaveError(result.error);
+        return;
+      }
+
+      // Redirect to organizations list after leaving
+      router.push("/dashboard/organizations");
+    } catch (error) {
+      console.error("Failed to leave organization:", error);
+      setLeaveError("An unexpected error occurred");
+    } finally {
+      setIsLeaving(false);
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -262,6 +291,7 @@ export function MembersTable({ organizationId }: MembersTableProps) {
                       size="sm"
                       disabled={ownerIds.size <= 1}
                       className="mr-1"
+                      onClick={() => setIsLeavingDialogOpen(true)}
                     >
                       Leave organization
                     </Button>
@@ -292,7 +322,12 @@ export function MembersTable({ organizationId }: MembersTableProps) {
                     </>
                   ) : member.role === "teammate" &&
                     member.user_id === userId ? (
-                    <Button variant="outline" size="sm" className="mr-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mr-1"
+                      onClick={() => setIsLeavingDialogOpen(true)}
+                    >
                       Leave organization
                     </Button>
                   ) : (
@@ -404,6 +439,46 @@ export function MembersTable({ organizationId }: MembersTableProps) {
               disabled={isUpdating || selectedRole === managingMember?.role}
             >
               {isUpdating ? "Updating..." : "Update role"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isLeavingDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsLeavingDialogOpen(false);
+            setLeaveError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Leave organization</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to leave this organization? You will lose
+              access to all repositories and data. You can only rejoin if
+              someone invites you again.
+            </DialogDescription>
+          </DialogHeader>
+          {leaveError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {leaveError}
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isLeaving}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleLeaveOrganization}
+              disabled={isLeaving}
+            >
+              {isLeaving ? "Leaving..." : "Leave organization"}
             </Button>
           </DialogFooter>
         </DialogContent>
