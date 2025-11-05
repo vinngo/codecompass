@@ -41,7 +41,7 @@ export function extractHeadings(content: string): Heading[] {
     const match = line.match(/^(#{1,6})\s+(.+)$/);
     if (match) {
       const level = match[1].length;
-      const text = match[2];
+      const text = match[2].trim();
       const id = text.toLowerCase().replace(/[^\w]+/g, '-');
       extractedHeadings.push({ id, text, level });
     }

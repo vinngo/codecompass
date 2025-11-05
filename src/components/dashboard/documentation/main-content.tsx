@@ -1,5 +1,6 @@
 import { ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useEffect } from "react";
 
 interface Page {
   id: string;
@@ -21,6 +22,10 @@ interface MainContentProps {
 }
 
 export function MainContent({ selectedFile }: MainContentProps) {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [selectedFile]);
+
   if (!selectedFile) {
     return (
       <div className="flex-1 flex flex-col">
@@ -34,6 +39,10 @@ export function MainContent({ selectedFile }: MainContentProps) {
     );
   }
 
+  const generateHeadingId = (text: string) => {
+    return text.toLowerCase().replace(/[^\w]+/g, '-');
+  };
+
   return (
     <div className="flex-1 flex flex-col">
       <div className="border-b border-grey-800 px-6 py-3 flex items-center justify-between">
@@ -45,28 +54,88 @@ export function MainContent({ selectedFile }: MainContentProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto bg-grey-950">
-        <div className="max-w-4xl mx-auto px-8 py-8">
+        <div className="max-w-4xl ml-24 mr-auto py-8">
           <div className="markdown-content">
             <ReactMarkdown
               components={{
-                h1: ({ node, ...props }) => (
-                  <h1
-                    className="text-3xl font-bold text-white mb-6 mt-2"
-                    {...props}
-                  />
-                ),
-                h2: ({ node, ...props }) => (
-                  <h2
-                    className="text-2xl font-semibold text-white mb-4 mt-10"
-                    {...props}
-                  />
-                ),
-                h3: ({ node, ...props }) => (
-                  <h3
-                    className="text-xl font-semibold text-grey-100 mb-3 mt-8"
-                    {...props}
-                  />
-                ),
+                h1: ({ node, children, ...props }) => {
+                  const text = typeof children === 'string' ? children : '';
+                  const id = generateHeadingId(text);
+                  return (
+                    <h1
+                      id={id}
+                      className="text-3xl font-bold text-white mb-6 mt-2 scroll-mt-20"
+                      {...props}
+                    >
+                      {children}
+                    </h1>
+                  );
+                },
+                h2: ({ node, children, ...props }) => {
+                  const text = typeof children === 'string' ? children : '';
+                  const id = generateHeadingId(text);
+                  return (
+                    <h2
+                      id={id}
+                      className="text-2xl font-semibold text-white mb-4 mt-10 scroll-mt-20"
+                      {...props}
+                    >
+                      {children}
+                    </h2>
+                  );
+                },
+                h3: ({ node, children, ...props }) => {
+                  const text = typeof children === 'string' ? children : '';
+                  const id = generateHeadingId(text);
+                  return (
+                    <h3
+                      id={id}
+                      className="text-xl font-semibold text-grey-100 mb-3 mt-8 scroll-mt-20"
+                      {...props}
+                    >
+                      {children}
+                    </h3>
+                  );
+                },
+                h4: ({ node, children, ...props }) => {
+                  const text = typeof children === 'string' ? children : '';
+                  const id = generateHeadingId(text);
+                  return (
+                    <h4
+                      id={id}
+                      className="text-lg font-semibold text-grey-100 mb-3 mt-6 scroll-mt-20"
+                      {...props}
+                    >
+                      {children}
+                    </h4>
+                  );
+                },
+                h5: ({ node, children, ...props }) => {
+                  const text = typeof children === 'string' ? children : '';
+                  const id = generateHeadingId(text);
+                  return (
+                    <h5
+                      id={id}
+                      className="text-base font-semibold text-grey-100 mb-2 mt-4 scroll-mt-20"
+                      {...props}
+                    >
+                      {children}
+                    </h5>
+                  );
+                },
+                h6: ({ node, children, ...props }) => {
+                  const text = typeof children === 'string' ? children : '';
+                  const id = generateHeadingId(text);
+                  return (
+                    <h6
+                      id={id}
+                      className="text-sm font-semibold text-grey-100 mb-2 mt-4 scroll-mt-20"
+                      {...props}
+                    >
+                      {children}
+                    </h6>
+                  );
+                },
                 p: ({ node, ...props }) => (
                   <p
                     className="text-grey-300 leading-relaxed mb-4"
