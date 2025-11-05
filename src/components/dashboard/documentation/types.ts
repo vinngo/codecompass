@@ -11,6 +11,7 @@ export interface Page {
   metadata: JSON | null;
   created_at: string;
   updated_at: string;
+  version: number;
 }
 
 export interface FileTreeNode extends Page {
@@ -22,3 +23,4 @@ export interface Heading {
   text: string;
   level: number;
 }
+

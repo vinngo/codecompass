@@ -15,6 +15,7 @@ interface Page {
   metadata: JSON | null;
   created_at: string;
   updated_at: string;
+  version: number;
 }
 
 interface MainContentProps {
