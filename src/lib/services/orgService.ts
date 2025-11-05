@@ -399,3 +399,80 @@ export async function removeMemberFromOrg(
 
   return { success: true, data: undefined };
 }
+
+export async function updateMemberRole(
+  organizationId: string,
+  userIdToUpdate: string,
+  newRole: "owner" | "teammate",
+): Promise<ActionResult<void>> {
+  const supabase = await createClient();
+
+  // 1. Authenticate user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated" };
+  }
+
+  // 2. Verify current user is an owner
+  const { data: currentUserRole, error: roleError } = await supabase
+    .from("user_organizations")
+    .select("role")
+    .eq("organization_id", organizationId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (roleError || !currentUserRole || currentUserRole.role !== "owner") {
+    return {
+      success: false,
+      error: "Only organization owners can change member roles",
+    };
+  }
+
+  // 3. Get current role of user being updated
+  const { data: targetUser, error: targetError } = await supabase
+    .from("user_organizations")
+    .select("role")
+    .eq("organization_id", organizationId)
+    .eq("user_id", userIdToUpdate)
+    .single();
+
+  if (targetError || !targetUser) {
+    return { success: false, error: "Member not found" };
+  }
+
+  // 4. If demoting from owner to teammate, check if they're the last owner
+  if (targetUser.role === "owner" && newRole === "teammate") {
+    const { data: owners, error: ownersError } = await supabase
+      .from("user_organizations")
+      .select("user_id")
+      .eq("organization_id", organizationId)
+      .eq("role", "owner");
+
+    if (ownersError) {
+      return { success: false, error: "Failed to verify ownership status" };
+    }
+
+    if (owners && owners.length <= 1) {
+      return {
+        success: false,
+        error: "Cannot demote the last owner. Promote another member first.",
+      };
+    }
+  }
+
+  // 5. Update the role
+  const { error: updateError } = await supabase
+    .from("user_organizations")
+    .update({ role: newRole })
+    .eq("organization_id", organizationId)
+    .eq("user_id", userIdToUpdate);
+
+  if (updateError) {
+    return { success: false, error: "Failed to update member role" };
+  }
+
+  return { success: true, data: undefined };
+}

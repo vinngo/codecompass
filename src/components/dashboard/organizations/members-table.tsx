@@ -4,7 +4,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EllipsisVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OrganizationMember } from "@/app/types/supabase";
-import { getOrgMembers, removeMemberFromOrg } from "@/lib/services/orgService";
+import {
+  getOrgMembers,
+  removeMemberFromOrg,
+  updateMemberRole,
+} from "@/lib/services/orgService";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -71,6 +82,14 @@ export function MembersTable({ organizationId }: MembersTableProps) {
     useState<OrganizationMember | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
+
+  const [managingMember, setManagingMember] =
+    useState<OrganizationMember | null>(null);
+  const [selectedRole, setSelectedRole] = useState<"owner" | "teammate">(
+    "teammate",
+  );
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery<OrganizationMember[]>({
     queryKey: ["members", organizationId],
@@ -168,6 +187,45 @@ export function MembersTable({ organizationId }: MembersTableProps) {
     }
   };
 
+  const handleUpdateRole = async () => {
+    if (!managingMember) return;
+
+    setIsUpdating(true);
+    setUpdateError(null);
+
+    try {
+      const result = await updateMemberRole(
+        organizationId,
+        managingMember.user_id,
+        selectedRole,
+      );
+
+      if (!result.success) {
+        setUpdateError(result.error);
+        return;
+      }
+
+      // Invalidate and refetch members list
+      await queryClient.invalidateQueries({
+        queryKey: ["members", organizationId],
+      });
+
+      // Close dialog and reset state
+      setManagingMember(null);
+    } catch (error) {
+      console.error("Failed to update member role:", error);
+      setUpdateError("An unexpected error occurred");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const openManageDialog = (member: OrganizationMember) => {
+    setManagingMember(member);
+    setSelectedRole(member.role);
+    setUpdateError(null);
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -209,7 +267,11 @@ export function MembersTable({ organizationId }: MembersTableProps) {
                     </Button>
                   ) : member.role === "teammate" && ownerIds.has(userId) ? (
                     <>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openManageDialog(member)}
+                      >
                         Manage role
                       </Button>
                       <DropdownMenu>
@@ -279,6 +341,69 @@ export function MembersTable({ organizationId }: MembersTableProps) {
               disabled={isRemoving}
             >
               {isRemoving ? "Removing..." : "Remove member"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!managingMember}
+        onOpenChange={(open) => {
+          if (!open) {
+            setManagingMember(null);
+            setUpdateError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage access</DialogTitle>
+            <DialogDescription>
+              Change the role for{" "}
+              <span className="font-medium">{managingMember?.user_email}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Role</label>
+              <Select
+                value={selectedRole}
+                onValueChange={(value) =>
+                  setSelectedRole(value as "owner" | "teammate")
+                }
+                disabled={isUpdating}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="teammate">Member</SelectItem>
+                  <SelectItem value="owner">Owner</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {selectedRole === "owner"
+                  ? "Owners can manage members, settings, and have full access to all repositories."
+                  : "Members can access repositories but cannot manage organization settings."}
+              </p>
+            </div>
+            {updateError && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {updateError}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isUpdating}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              onClick={handleUpdateRole}
+              disabled={isUpdating || selectedRole === managingMember?.role}
+            >
+              {isUpdating ? "Updating..." : "Update role"}
             </Button>
           </DialogFooter>
         </DialogContent>
