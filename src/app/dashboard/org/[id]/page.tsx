@@ -6,7 +6,6 @@ import {
   QueryClient,
   dehydrate,
 } from "@tanstack/react-query";
-import { createClient } from "@/utils/supabase/server";
 import { getReposByOrganizationId } from "@/lib/services/repoService";
 import { Repo } from "@/app/types/supabase";
 import { redirect } from "next/navigation";
