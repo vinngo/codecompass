@@ -335,3 +335,67 @@ export async function acceptInvite(
     data: { organizationId: invite.organization_id },
   };
 }
+
+export async function removeMemberFromOrg(
+  organizationId: string,
+  userIdToRemove: string,
+): Promise<ActionResult<void>> {
+  const supabase = await createClient();
+
+  // 1. Authenticate user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated" };
+  }
+
+  // 2. Verify current user is an owner (RLS will also enforce this)
+  const { data: currentUserRole, error: roleError } = await supabase
+    .from("user_organizations")
+    .select("role")
+    .eq("organization_id", organizationId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (roleError || !currentUserRole || currentUserRole.role !== "owner") {
+    return {
+      success: false,
+      error: "Only organization owners can remove members",
+    };
+  }
+
+  // 3. Check if the user being removed is the last owner
+  if (userIdToRemove === user.id) {
+    const { data: owners, error: ownersError } = await supabase
+      .from("user_organizations")
+      .select("user_id")
+      .eq("organization_id", organizationId)
+      .eq("role", "owner");
+
+    if (ownersError) {
+      return { success: false, error: "Failed to verify ownership status" };
+    }
+
+    if (owners && owners.length <= 1) {
+      return {
+        success: false,
+        error: "Cannot remove the last owner from the organization",
+      };
+    }
+  }
+
+  // 4. Remove the member (RLS policy will enforce owner permission)
+  const { error: deleteError } = await supabase
+    .from("user_organizations")
+    .delete()
+    .eq("organization_id", organizationId)
+    .eq("user_id", userIdToRemove);
+
+  if (deleteError) {
+    return { success: false, error: "Failed to remove member" };
+  }
+
+  return { success: true, data: undefined };
+}

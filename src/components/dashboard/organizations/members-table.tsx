@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EllipsisVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { OrganizationMember, User } from "@/app/types/supabase";
-import { getOrgMembers } from "@/lib/services/orgService";
+import { OrganizationMember } from "@/app/types/supabase";
+import { getOrgMembers, removeMemberFromOrg } from "@/lib/services/orgService";
 import {
   Table,
   TableBody,
@@ -15,6 +15,46 @@ import {
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/dashboard/dashboard-provider";
+import dynamic from "next/dynamic";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+// Lazy load dropdown menu components
+const DropdownMenu = dynamic(
+  () =>
+    import("@/components/ui/dropdown-menu").then((mod) => ({
+      default: mod.DropdownMenu,
+    })),
+  { ssr: false },
+);
+const DropdownMenuContent = dynamic(
+  () =>
+    import("@/components/ui/dropdown-menu").then((mod) => ({
+      default: mod.DropdownMenuContent,
+    })),
+  { ssr: false },
+);
+const DropdownMenuItem = dynamic(
+  () =>
+    import("@/components/ui/dropdown-menu").then((mod) => ({
+      default: mod.DropdownMenuItem,
+    })),
+  { ssr: false },
+);
+const DropdownMenuTrigger = dynamic(
+  () =>
+    import("@/components/ui/dropdown-menu").then((mod) => ({
+      default: mod.DropdownMenuTrigger,
+    })),
+  { ssr: false },
+);
 
 type MembersTableProps = {
   organizationId: string;
@@ -24,8 +64,14 @@ export function MembersTable({ organizationId }: MembersTableProps) {
   // Get userId from React Query cache via useAuth hook
   const { user } = useAuth();
   const userId = user?.id;
+  const queryClient = useQueryClient();
 
   const [ownerIds, setOwnerIds] = useState<Set<string | undefined>>(new Set());
+  const [removingMember, setRemovingMember] =
+    useState<OrganizationMember | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+
   const { data, isLoading, error } = useQuery<OrganizationMember[]>({
     queryKey: ["members", organizationId],
     queryFn: async () => {
@@ -90,6 +136,38 @@ export function MembersTable({ organizationId }: MembersTableProps) {
     return `${Math.floor(diffInDays / 365)} years ago`;
   };
 
+  const handleRemoveMember = async () => {
+    if (!removingMember) return;
+
+    setIsRemoving(true);
+    setRemoveError(null);
+
+    try {
+      const result = await removeMemberFromOrg(
+        organizationId,
+        removingMember.user_id,
+      );
+
+      if (!result.success) {
+        setRemoveError(result.error);
+        return;
+      }
+
+      // Invalidate and refetch members list
+      await queryClient.invalidateQueries({
+        queryKey: ["members", organizationId],
+      });
+
+      // Close dialog and reset state
+      setRemovingMember(null);
+    } catch (error) {
+      console.error("Failed to remove member:", error);
+      setRemoveError("An unexpected error occurred");
+    } finally {
+      setIsRemoving(false);
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -134,9 +212,21 @@ export function MembersTable({ organizationId }: MembersTableProps) {
                       <Button variant="outline" size="sm">
                         Manage role
                       </Button>
-                      <Button variant="ghost" size="icon-sm">
-                        <EllipsisVertical className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon-sm">
+                            <EllipsisVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem
+                            className="focus:cursor-pointer mt-1 text-sm text-destructive bg-elevated focus:text-foreground focus:bg-destructive"
+                            onSelect={() => setRemovingMember(member)}
+                          >
+                            Remove member
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </>
                   ) : member.role === "teammate" &&
                     member.user_id === userId ? (
@@ -152,6 +242,47 @@ export function MembersTable({ organizationId }: MembersTableProps) {
           ))}
         </TableBody>
       </Table>
+
+      <Dialog
+        open={!!removingMember}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRemovingMember(null);
+            setRemoveError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove member</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove{" "}
+              <span className="font-medium">{removingMember?.user_email}</span>{" "}
+              from this organization? They will lose access to all repositories
+              and data.
+            </DialogDescription>
+          </DialogHeader>
+          {removeError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {removeError}
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isRemoving}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleRemoveMember}
+              disabled={isRemoving}
+            >
+              {isRemoving ? "Removing..." : "Remove member"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
