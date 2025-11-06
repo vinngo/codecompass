@@ -13,6 +13,6 @@ export const useChatUIStore = create<ChatUIState>((set) => ({
   initialMessage: "",
   expand: (message: string) =>
     set({ isExpanded: true, initialMessage: message }),
-  minimize: () => set({ isExpanded: false }),
+  minimize: () => set({ isExpanded: false, initialMessage: "" }),
   toggle: () => set((state) => ({ isExpanded: !state.isExpanded })),
 }));

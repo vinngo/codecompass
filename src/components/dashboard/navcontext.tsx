@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useNavBarStore } from "@/lib/stores/useNavbarStore";
+import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 import Link from "next/link";
 
 // Map route patterns to display names
@@ -18,6 +19,12 @@ const routeDisplayNames: Record<string, string> = {
 export function NavContext() {
   const pathname = usePathname();
   const { contextText, breadcrumbs } = useNavBarStore();
+  const minimize = useChatUIStore((state) => state.minimize);
+
+  const handleBreadcrumbClick = () => {
+    // Reset chat state when navigating away
+    minimize();
+  };
 
   // Derive context from URL as fallback
   const defaultContext = useMemo(() => {
@@ -51,6 +58,7 @@ export function NavContext() {
               <Link
                 href={crumb.href}
                 prefetch={true}
+                onClick={handleBreadcrumbClick}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {crumb.label}
