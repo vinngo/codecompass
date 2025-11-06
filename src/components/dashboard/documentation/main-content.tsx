@@ -1,6 +1,6 @@
 import { ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface Page {
   id: string;
@@ -20,12 +20,21 @@ interface Page {
 
 interface MainContentProps {
   selectedFile: Page | null;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-export function MainContent({ selectedFile }: MainContentProps) {
+export function MainContent({
+  selectedFile,
+  scrollContainerRef: externalRef,
+}: MainContentProps) {
+  const internalRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = externalRef || internalRef;
+
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [selectedFile]);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo(0, 0);
+    }
+  }, [selectedFile, scrollContainerRef]);
 
   if (!selectedFile) {
     return (
@@ -45,7 +54,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col xl:mr-64">
+    <div className="flex-1 flex flex-col">
       <div className="border-b border-grey-800 px-6 py-3 flex items-center justify-between">
         <h1 className="text-xl font-bold">{selectedFile.title}</h1>
         <button className="text-xs h-8 px-4 border border-grey-700 rounded hover:bg-grey-800 transition-colors flex items-center gap-2">
@@ -54,8 +63,11 @@ export function MainContent({ selectedFile }: MainContentProps) {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-grey-950">
-        <div className="max-w-full lg:max-w-4xl mx-4 md:mx-8 lg:ml-24 lg:mr-8 py-8 pb-48">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto bg-grey-950"
+      >
+        <div className="max-w-full lg:max-w-4xl mx-4 md:mx-8 lg:ml-24 lg:mr-8 py-8 pb-135">
           <div className="markdown-content">
             <ReactMarkdown
               components={{

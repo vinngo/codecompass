@@ -101,7 +101,7 @@ export function FileTreeSidebar({
               <div
                 className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : "rotate-0"}`}
               >
-                <ChevronRight className="w-3 h-3 flex-shrink-0" />
+                <ChevronRight className="w-3 h-3 shrink-0" />
               </div>
             ) : (
               <div className="w-3" />
@@ -145,7 +145,7 @@ export function FileTreeSidebar({
       {/* Sidebar */}
       <div
         className={`
-        w-64 border-r border-gray-800 flex flex-col bg-background
+        w-64 border-r border-gray-800 flex flex-col bg-background h-full
         lg:relative lg:translate-x-0
         ${isOpen ? "fixed inset-y-0 left-0 z-50 translate-x-0" : "hidden lg:flex"}
       `}

@@ -1,6 +1,5 @@
 import DocumentationViewer from "@/components/dashboard/documentation/documentation";
 import ChatBubble from "@/components/dashboard/chat/chat-bubble";
-import ChatOverlay from "@/components/dashboard/chat/chat-overlay";
 import { NavbarContextSetter } from "@/components/dashboard/navbar-context-setter";
 import { getRepoWithStatus } from "@/lib/services/repoService";
 import { createClient } from "@/utils/supabase/server";
@@ -32,7 +31,7 @@ export default async function RepoPage({
     .single();
 
   return (
-    <div className="relative">
+    <div className="flex flex-col h-screen overflow-hidden">
       <NavbarContextSetter
         breadcrumbs={[
           { label: "Organizations", href: "/dashboard/organizations" },
@@ -44,7 +43,9 @@ export default async function RepoPage({
         ]}
       />
       {/* Documentation Viewer - Main content */}
-      <DocumentationViewer />
+      <div className="flex-1 overflow-hidden">
+        <DocumentationViewer />
+      </div>
 
       {/* Chat Bubble - Floating input (shows when chat is minimized) */}
       <ChatBubble />

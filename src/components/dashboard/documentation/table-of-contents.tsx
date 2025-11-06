@@ -18,6 +18,7 @@ interface TableOfContentsSidebarProps {
   onRefreshClick: () => void;
   isOpen?: boolean;
   onClose?: () => void;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function TableOfContentsSidebar({
@@ -26,12 +27,18 @@ export function TableOfContentsSidebar({
   onRefreshClick,
   isOpen = false,
   onClose,
+  scrollContainerRef,
 }: TableOfContentsSidebarProps) {
   const [activeHeading, setActiveHeading] = useState<string>("");
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     if (!selectedFile || headings.length === 0) return;
+
+    // Use the passed ref or fall back to querySelector
+    const scrollContainer =
+      scrollContainerRef?.current || document.querySelector(".overflow-y-auto");
+    if (!scrollContainer) return;
 
     const handleScroll = () => {
       const headingElements = headings
@@ -46,7 +53,7 @@ export function TableOfContentsSidebar({
 
       if (headingElements.length === 0) return;
 
-      const scrollPosition = window.scrollY + 100;
+      const scrollPosition = scrollContainer.scrollTop + 100;
 
       for (let i = headingElements.length - 1; i >= 0; i--) {
         const { id, element } = headingElements[i];
@@ -57,37 +64,47 @@ export function TableOfContentsSidebar({
       }
 
       const scrollPercentage =
-        (window.scrollY /
-          (document.documentElement.scrollHeight - window.innerHeight)) *
+        (scrollContainer.scrollTop /
+          (scrollContainer.scrollHeight - scrollContainer.clientHeight)) *
         100;
       setShowBackToTop(scrollPercentage > 50);
     };
 
-    window.addEventListener("scroll", handleScroll);
+    scrollContainer.addEventListener("scroll", handleScroll);
     handleScroll();
 
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [selectedFile, headings]);
+    return () => scrollContainer.removeEventListener("scroll", handleScroll);
+  }, [selectedFile, headings, scrollContainerRef]);
 
   const scrollToHeading = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      const offset = 80;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
+      // Use the passed ref or find the scroll container
+      const scrollContainer =
+        scrollContainerRef?.current || element.closest(".overflow-y-auto");
+      if (scrollContainer) {
+        const offset = 80;
+        const elementPosition = element.offsetTop;
+        const offsetPosition = elementPosition - offset;
 
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth",
-      });
+        scrollContainer.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth",
+        });
+      }
     }
   };
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    // Use the passed ref or find the main content scroll container
+    const scrollContainer =
+      scrollContainerRef?.current || document.querySelector(".overflow-y-auto");
+    if (scrollContainer) {
+      scrollContainer.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
   };
 
   return (
@@ -104,13 +121,13 @@ export function TableOfContentsSidebar({
       <div
         className={`
         w-64 border-l border-gray-800 flex flex-col bg-background
-        xl:fixed xl:right-0 xl:top-0 xl:h-screen
+        xl:h-full
         ${isOpen ? "fixed right-0 top-0 h-screen z-50" : "hidden xl:flex"}
       `}
       >
         {/* Mobile close button */}
         {onClose && (
-          <div className="xl:hidden p-3 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
+          <div className="xl:hidden p-3 border-b border-gray-800 flex items-center justify-between shrink-0">
             <span className="text-sm font-semibold">Table of Contents</span>
             <button onClick={onClose} className="p-1 hover:bg-gray-800 rounded">
               <X className="w-4 h-4" />
@@ -119,7 +136,7 @@ export function TableOfContentsSidebar({
         )}
 
         {/* Header section */}
-        <div className="p-4 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
+        <div className="p-4 border-b border-gray-800 flex items-center justify-between shrink-0">
           <button
             onClick={onRefreshClick}
             className="text-xs text-gray-400 hover:text-teal-400 flex items-center gap-1"
@@ -162,7 +179,7 @@ export function TableOfContentsSidebar({
 
         {/* Back to Top Button */}
         {showBackToTop && (
-          <div className="absolute bottom-4 right-4 flex-shrink-0">
+          <div className="absolute bottom-4 right-4 shrink-0">
             <button
               onClick={scrollToTop}
               className="w-8 h-8 bg-gray-800 hover:bg-teal-600 border border-gray-700 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"

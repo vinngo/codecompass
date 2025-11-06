@@ -14,7 +14,7 @@ export default function ChatOverlay() {
   return (
     <div className="flex flex-col h-full w-full bg-background overflow-hidden">
       {/* Header with close button */}
-      <div className="flex justify-left py-2 px-2 border-b border-border flex-shrink-0">
+      <div className="flex justify-left py-2 px-2 border-b border-border shrink-0">
         <Button variant="ghost" onClick={minimize} aria-label="Close chat">
           <ArrowLeft className="h-5 w-5" />
           Back

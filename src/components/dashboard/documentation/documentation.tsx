@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Menu, List } from "lucide-react";
 import { FileTreeSidebar } from "./file-tree";
 import { MainContent } from "./main-content";
@@ -25,8 +25,7 @@ export default function DocumentationViewer() {
   const [isTocOpen, setIsTocOpen] = useState(false);
 
   const isExpanded = useChatUIStore((state) => state.isExpanded);
-
-  const repoId = "microsoft/vscode";
+  const mainContentScrollRef = useRef<HTMLDivElement>(null);
 
   /*This is a React anti-pattern. Replace with tanstack query later*/
   useEffect(() => {
@@ -250,7 +249,7 @@ const fetchDocumentation = async () => {
   }
 
   return (
-    <div className="flex bg-background ">
+    <div className="flex bg-background h-full">
       {/* Mobile toggle buttons */}
       <div className="fixed bottom-20 left-4 z-30 flex flex-col gap-2 lg:hidden">
         <Button
@@ -289,7 +288,10 @@ const fetchDocumentation = async () => {
         onClose={() => setIsFileTreeOpen(false)}
       />
 
-      <MainContent selectedFile={selectedFile} />
+      <MainContent
+        selectedFile={selectedFile}
+        scrollContainerRef={mainContentScrollRef}
+      />
 
       <TableOfContentsSidebar
         selectedFile={selectedFile}
@@ -297,6 +299,7 @@ const fetchDocumentation = async () => {
         onRefreshClick={() => setShowRefreshModal(true)}
         isOpen={isTocOpen}
         onClose={() => setIsTocOpen(false)}
+        scrollContainerRef={mainContentScrollRef}
       />
 
       <RefreshModal
