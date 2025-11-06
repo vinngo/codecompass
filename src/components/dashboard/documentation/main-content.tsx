@@ -41,11 +41,11 @@ export function MainContent({ selectedFile }: MainContentProps) {
   }
 
   const generateHeadingId = (text: string) => {
-    return text.toLowerCase().replace(/[^\w]+/g, '-');
+    return text.toLowerCase().replace(/[^\w]+/g, "-");
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col xl:mr-64">
       <div className="border-b border-grey-800 px-6 py-3 flex items-center justify-between">
         <h1 className="text-xl font-bold">{selectedFile.title}</h1>
         <button className="text-xs h-8 px-4 border border-grey-700 rounded hover:bg-grey-800 transition-colors flex items-center gap-2">
@@ -55,12 +55,12 @@ export function MainContent({ selectedFile }: MainContentProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto bg-grey-950">
-        <div className="max-w-4xl ml-24 mr-auto py-8">
+        <div className="max-w-full lg:max-w-4xl mx-4 md:mx-8 lg:ml-24 lg:mr-8 py-8 pb-48">
           <div className="markdown-content">
             <ReactMarkdown
               components={{
                 h1: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h1
@@ -73,7 +73,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
                   );
                 },
                 h2: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h2
@@ -86,7 +86,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
                   );
                 },
                 h3: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h3
@@ -99,7 +99,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
                   );
                 },
                 h4: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h4
@@ -112,7 +112,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
                   );
                 },
                 h5: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h5
@@ -125,7 +125,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
                   );
                 },
                 h6: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h6

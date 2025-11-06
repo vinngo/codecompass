@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 import MessageList from "./message-list";
 import ChatInput from "./chat-input";
 import AnswerPanel from "./answer-panel";
@@ -33,52 +34,53 @@ export default function ChatInterface() {
   const [responseLoading, setResponseLoading] = useState<boolean>(false);
   const [chatInputDisabled, setChatInputDisabled] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState("");
+  const initialMessage = useChatUIStore((state) => state.initialMessage);
+  const hasSentInitialMessage = useRef(false);
 
-  const handleSend = () => {
-    if (chatInputDisabled) return;
+  const sendMessage = (text: string) => {
+    if (chatInputDisabled || !text.trim()) return;
 
-    if (inputValue.trim()) {
-      setChatInputDisabled(true);
-      setResponseLoading(true);
-      const userQuestion = inputValue;
-      const timestamp = new Date().toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+    setChatInputDisabled(true);
+    setResponseLoading(true);
+    const userQuestion = text;
+    const timestamp = new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-      // Add user message to chat
+    // Add user message to chat
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      {
+        id: prevMessages.length + 1,
+        text: userQuestion,
+        sender: "user",
+        timestamp,
+      },
+    ]);
+
+    // Create a new conversation turn with loading state
+    const turnId = Date.now();
+    setConversationTurns((prevTurns) => [
+      ...prevTurns,
+      {
+        id: turnId,
+        userQuestion,
+        timestamp,
+        codeSnippets: [],
+        loading: true,
+      },
+    ]);
+
+    setInputValue("");
+
+    setTimeout(() => {
+      //simulate LLM response
       setMessages((prevMessages) => [
         ...prevMessages,
         {
           id: prevMessages.length + 1,
-          text: userQuestion,
-          sender: "user",
-          timestamp,
-        },
-      ]);
-
-      // Create a new conversation turn with loading state
-      const turnId = Date.now();
-      setConversationTurns((prevTurns) => [
-        ...prevTurns,
-        {
-          id: turnId,
-          userQuestion,
-          timestamp,
-          codeSnippets: [],
-          loading: true,
-        },
-      ]);
-
-      setInputValue("");
-
-      setTimeout(() => {
-        //simulate LLM response
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            id: prevMessages.length + 1,
-            text: `Hello! I'm an AI assistant. I can help you understand and navigate the codebase.
+          text: `Hello! I'm an AI assistant. I can help you understand and navigate the codebase.
 
 Since you're asking about this repository, I can help you with questions about:
 
@@ -88,25 +90,25 @@ Since you're asking about this repository, I can help you with questions about:
 - Relationships between different components
 
 Feel free to ask me specific questions about how the code works, where certain functionality is implemented, or how different components interact with each other!`,
-            sender: "assistant",
-            timestamp: new Date().toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          },
-        ]);
+          sender: "assistant",
+          timestamp: new Date().toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
 
-        // Update the conversation turn with code snippets
-        setConversationTurns((prevTurns) =>
-          prevTurns.map((turn) =>
-            turn.id === turnId
-              ? {
-                  ...turn,
-                  loading: false,
-                  codeSnippets: [
-                    {
-                      file: `example-${turnId}.ts`,
-                      code: `"use client";
+      // Update the conversation turn with code snippets
+      setConversationTurns((prevTurns) =>
+        prevTurns.map((turn) =>
+          turn.id === turnId
+            ? {
+                ...turn,
+                loading: false,
+                codeSnippets: [
+                  {
+                    file: `example-${turnId}.ts`,
+                    code: `"use client";
 
 import React, { useState } from "react";
 import MessageList from "./message-list";
@@ -159,17 +161,28 @@ export default function ChatInterface() {
     </div>
   );
 }`,
-                    },
-                  ],
-                }
-              : turn,
-          ),
-        );
-        setResponseLoading(false);
-        setChatInputDisabled(false);
-      }, 5000);
-    }
+                  },
+                ],
+              }
+            : turn,
+        ),
+      );
+      setResponseLoading(false);
+      setChatInputDisabled(false);
+    }, 5000);
   };
+
+  const handleSend = () => {
+    sendMessage(inputValue);
+  };
+
+  // Auto-send initial message when component mounts
+  useEffect(() => {
+    if (initialMessage && !hasSentInitialMessage.current) {
+      hasSentInitialMessage.current = true;
+      sendMessage(initialMessage);
+    }
+  }, [initialMessage]);
 
   return (
     <div className="flex h-[calc(100vh-64px)] bg-grey-950 text-grey-300">
