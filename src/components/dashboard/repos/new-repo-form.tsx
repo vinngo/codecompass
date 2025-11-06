@@ -24,7 +24,11 @@ import {
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createRepoViaGithub } from "@/lib/services/repoService";
+import {
+  createRepoViaGithub,
+  createRepoViaLocalFile,
+} from "@/lib/services/repoService";
+import { useQueryClient } from "@tanstack/react-query";
 
 type NewProjectFormProps = {
   orgId: string;
@@ -32,6 +36,7 @@ type NewProjectFormProps = {
 
 export function NewProjectForm({ orgId }: NewProjectFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
   const [type, setType] = useState("local");
@@ -45,12 +50,30 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
     setIsLoading(true);
     setError(null);
 
-    if (type === "local") {
-      //temp: implement S3 object storage
-      return;
-    } else if (type === "github") {
-      try {
-        const formData = new FormData(e.currentTarget);
+    try {
+      const formData = new FormData(e.currentTarget);
+
+      if (type === "local") {
+        // Validate that a file has been uploaded
+        if (!uploadedFile) {
+          setError("Please select a .zip file to upload");
+          setIsLoading(false);
+          return;
+        }
+
+        const result = await createRepoViaLocalFile(formData, orgId);
+
+        if (!result.success) {
+          setError(result.error);
+          setIsLoading(false);
+          return;
+        }
+
+        // Invalidate repositories query to refetch fresh data
+        queryClient.invalidateQueries({ queryKey: ["repositories", orgId] });
+
+        router.push(`/dashboard/org/${orgId}`);
+      } else if (type === "github") {
         const result = await createRepoViaGithub(formData, orgId);
 
         if (!result.success) {
@@ -59,13 +82,16 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
           return;
         }
 
+        // Invalidate repositories query to refetch fresh data
+        queryClient.invalidateQueries({ queryKey: ["repositories", orgId] });
+
         router.push(`/dashboard/org/${orgId}`);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "An unexpected error occurred",
-        );
-        setIsLoading(false);
       }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred",
+      );
+      setIsLoading(false);
     }
   };
 
@@ -177,7 +203,7 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
 
         <div className="flex gap-3">
           <Button type="submit" size="sm" disabled={isLoading || !name.trim()}>
-            {isLoading ? "Creating..." : "Create Organization"}
+            {isLoading ? "Creating..." : "Create Repository"}
           </Button>
           <Button
             type="button"

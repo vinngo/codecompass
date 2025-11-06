@@ -72,6 +72,110 @@ export async function createRepoViaGithub(
   return { success: true, data: repo as Repo };
 }
 
+export async function createRepoViaLocalFile(
+  formData: FormData,
+  orgId: string,
+): Promise<ActionResult<Repo>> {
+  const client = await createClient();
+
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated!" };
+  }
+
+  const name = formData.get("name") as string;
+  const file = formData.get("file") as File;
+
+  // Validate inputs
+  if (!name || name.trim() === "") {
+    return { success: false, error: "Repository name is required" };
+  }
+
+  if (!file) {
+    return { success: false, error: "File is required" };
+  }
+
+  // Validate file type
+  if (!file.name.endsWith(".zip")) {
+    return { success: false, error: "Only .zip files are allowed" };
+  }
+
+  // Validate file size (max 100MB)
+  const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+  if (file.size > maxSize) {
+    return {
+      success: false,
+      error: "File size exceeds 100MB limit",
+    };
+  }
+
+  try {
+    // Generate a unique file name to prevent collisions
+    const timestamp = Date.now();
+    const sanitizedName = name.trim().replace(/[^a-z0-9-_]/gi, "_");
+    const fileName = `${sanitizedName}_${timestamp}_${file.name}`;
+    const filePath = `${orgId}/${fileName}`;
+
+    // Upload file to Supabase Storage
+    const { error: uploadError } = await client.storage
+      .from("local_repos")
+      .upload(filePath, file, {
+        contentType: "application/zip",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      return {
+        success: false,
+        error: `File upload failed: ${uploadError.message}`,
+      };
+    }
+
+    // Get the public URL for the uploaded file
+    const { data: urlData } = client.storage
+      .from("local_repos")
+      .getPublicUrl(filePath);
+
+    // Create repository record in database
+    const { data: repo, error: repoError } = await client
+      .from("repositories")
+      .insert({
+        name: name.trim(),
+        provider: "local",
+        repo_url: null,
+        object_url: urlData.publicUrl,
+        organization_id: orgId,
+        indexed_by: user.id,
+        index_status: "not indexed",
+      })
+      .select()
+      .single();
+
+    if (repoError) {
+      console.error("Repository creation error:", repoError);
+      // Attempt to clean up uploaded file
+      await client.storage.from("local_repos").remove([filePath]);
+      return {
+        success: false,
+        error: `Repository creation failed: ${repoError.message}`,
+      };
+    }
+
+    return { success: true, data: repo as Repo };
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
 // ============================================================================
 // Repository Management Services
 // ============================================================================
