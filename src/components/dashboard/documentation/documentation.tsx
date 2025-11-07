@@ -5,10 +5,17 @@ import { Menu, List } from "lucide-react";
 import { FileTreeSidebar } from "./file-tree";
 import { MainContent } from "./main-content";
 import { TableOfContentsSidebar } from "./table-of-contents";
-import { RefreshModal } from "./refresh-modal";
 import { Page, FileTreeNode, Heading } from "./types";
 import { buildFileTree, extractHeadings } from "./utils";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import ChatOverlay from "../chat/chat-overlay";
 import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 
@@ -23,6 +30,7 @@ export default function DocumentationViewer() {
   const [showRefreshModal, setShowRefreshModal] = useState(false);
   const [isFileTreeOpen, setIsFileTreeOpen] = useState(false);
   const [isTocOpen, setIsTocOpen] = useState(false);
+  const [error, setError] = useState("");
 
   const isExpanded = useChatUIStore((state) => state.isExpanded);
   const mainContentScrollRef = useRef<HTMLDivElement>(null);
@@ -188,42 +196,6 @@ The initialization sequence defines the startup order of all components.`,
     }
   };
 
-  // Function for API call ?
-  /*
-const fetchDocumentation = async () => {
-  try {
-    setIsLoading(true);
-
-    // Fetch from API
-    const response = await fetch(`/api/documentation?repo_id=${repoId}`);
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch documentation');
-    }
-
-    const data = await response.json();
-
-    // Build the file tree from API data
-    const tree = buildFileTree(data.pages);
-    setFileTree(tree);
-    setLastIndexed(data.last_indexed || '19 October 2025 (cc66fc)');
-
-    // Auto-expand first level nodes
-    setExpandedNodes(new Set(['1', '4']));
-
-    // Select first page by default
-    if (data.pages && data.pages.length > 0) {
-      setSelectedFile(data.pages[0]);
-    }
-  } catch (error) {
-    console.error('Error fetching documentation:', error);
-    setError('Failed to load documentation');
-  } finally {
-    setIsLoading(false);
-  }
-};
-*/
-
   const toggleExpanded = (nodeId: string) => {
     setExpandedNodes((prev) => {
       const next = new Set(prev);
@@ -234,6 +206,19 @@ const fetchDocumentation = async () => {
       }
       return next;
     });
+  };
+
+  const handleRefresh = () => {
+    try {
+      setError("");
+      /*
+        server action: call the backend to reindex the codebase and update status in postgres
+      */
+
+      setShowRefreshModal(false);
+    } catch (e) {
+      setError("could not refresh:" + e);
+    }
   };
 
   if (isLoading) {
@@ -302,10 +287,27 @@ const fetchDocumentation = async () => {
         scrollContainerRef={mainContentScrollRef}
       />
 
-      <RefreshModal
-        isOpen={showRefreshModal}
-        onClose={() => setShowRefreshModal(false)}
-      />
+      <Dialog open={showRefreshModal} onOpenChange={setShowRefreshModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Refresh this wiki</DialogTitle>
+            <DialogDescription>
+              This action will reindex your codebase. Documentation and chat
+              will be unavailable for a short time.
+            </DialogDescription>
+          </DialogHeader>
+          {error && (
+            <div className="w-full p-3 bg-destructive/10 text-destructive text-sm rounded-md text-center">
+              {error}
+            </div>
+          )}
+          <DialogFooter>
+            <Button className="w-full sm:w-auto" onClick={handleRefresh}>
+              Refresh
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
