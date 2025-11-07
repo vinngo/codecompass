@@ -1,5 +1,9 @@
+"use client";
+
 import React from "react";
-import { Copy, Share2 } from "lucide-react";
+import { ArrowLeft, Copy, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 
 interface MessageBubbleProps {
   id: number;
@@ -9,12 +13,19 @@ interface MessageBubbleProps {
 }
 
 export default function MessageBubble({ text, sender }: MessageBubbleProps) {
+  const { minimize } = useChatUIStore();
+
   if (sender === "user") {
     return (
-      <div className="mb-8">
+      <div className="mb-8 flex flex-row gap-6 px-5">
         <div className="text-gray-100 tracking-wide text-2xl leading-relaxed">
           {text}
         </div>
+
+        <Button variant="ghost" onClick={minimize} aria-label="Close chat">
+          <ArrowLeft className="h-5 w-5" />
+          Back to documentation
+        </Button>
       </div>
     );
   }

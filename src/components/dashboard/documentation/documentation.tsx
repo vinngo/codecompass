@@ -16,8 +16,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import ChatOverlay from "../chat/chat-overlay";
-import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 
 export default function DocumentationViewer() {
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
@@ -31,8 +29,6 @@ export default function DocumentationViewer() {
   const [isFileTreeOpen, setIsFileTreeOpen] = useState(false);
   const [isTocOpen, setIsTocOpen] = useState(false);
   const [error, setError] = useState("");
-
-  const isExpanded = useChatUIStore((state) => state.isExpanded);
   const mainContentScrollRef = useRef<HTMLDivElement>(null);
 
   /*This is a React anti-pattern. Replace with tanstack query later*/
@@ -227,10 +223,6 @@ The initialization sequence defines the startup order of all components.`,
         <div className="text-gray-400">Loading documentation...</div>
       </div>
     );
-  }
-
-  if (isExpanded) {
-    return <ChatOverlay />;
   }
 
   return (
