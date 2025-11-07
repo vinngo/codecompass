@@ -1,5 +1,6 @@
 import DocumentationViewer from "@/components/dashboard/documentation/documentation";
 import ChatBubble from "@/components/dashboard/chat/chat-bubble";
+import ChatOverlay from "@/components/dashboard/chat/chat-overlay";
 import { NavbarContextSetter } from "@/components/dashboard/navbar-context-setter";
 import { getRepoWithStatus } from "@/lib/services/repoService";
 import { createClient } from "@/utils/supabase/server";
@@ -49,6 +50,9 @@ export default async function RepoPage({
 
       {/* Chat Bubble - Floating input (shows when chat is minimized) */}
       <ChatBubble />
+
+      {/* Chat Overlay - Independent layer (shows when chat is expanded) */}
+      <ChatOverlay />
     </div>
   );
 }
