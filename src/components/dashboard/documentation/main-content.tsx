@@ -1,6 +1,6 @@
 import { ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface Page {
   id: string;
@@ -20,12 +20,21 @@ interface Page {
 
 interface MainContentProps {
   selectedFile: Page | null;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-export function MainContent({ selectedFile }: MainContentProps) {
+export function MainContent({
+  selectedFile,
+  scrollContainerRef: externalRef,
+}: MainContentProps) {
+  const internalRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = externalRef || internalRef;
+
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [selectedFile]);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo(0, 0);
+    }
+  }, [selectedFile, scrollContainerRef]);
 
   if (!selectedFile) {
     return (
@@ -41,7 +50,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
   }
 
   const generateHeadingId = (text: string) => {
-    return text.toLowerCase().replace(/[^\w]+/g, '-');
+    return text.toLowerCase().replace(/[^\w]+/g, "-");
   };
 
   return (
@@ -54,13 +63,16 @@ export function MainContent({ selectedFile }: MainContentProps) {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-grey-950">
-        <div className="max-w-4xl ml-24 mr-auto py-8">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto bg-grey-950"
+      >
+        <div className="max-w-full lg:max-w-4xl mx-4 md:mx-8 lg:ml-24 lg:mr-8 py-8 pb-135">
           <div className="markdown-content">
             <ReactMarkdown
               components={{
                 h1: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h1
@@ -73,7 +85,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
                   );
                 },
                 h2: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h2
@@ -86,7 +98,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
                   );
                 },
                 h3: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h3
@@ -99,7 +111,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
                   );
                 },
                 h4: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h4
@@ -112,7 +124,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
                   );
                 },
                 h5: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h5
@@ -125,7 +137,7 @@ export function MainContent({ selectedFile }: MainContentProps) {
                   );
                 },
                 h6: ({ node, children, ...props }) => {
-                  const text = typeof children === 'string' ? children : '';
+                  const text = typeof children === "string" ? children : "";
                   const id = generateHeadingId(text);
                   return (
                     <h6

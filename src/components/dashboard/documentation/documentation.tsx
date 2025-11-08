@@ -1,25 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FileTreeSidebar } from './file-tree';
-import { MainContent } from './main-content';
-import { TableOfContentsSidebar } from './table-of-contents';
-import { RefreshModal } from './refresh-modal';
-import { Page, FileTreeNode, Heading } from './types';
-import { buildFileTree, extractHeadings } from './utils';
+import { useState, useEffect, useRef } from "react";
+import { Menu, List } from "lucide-react";
+import { FileTreeSidebar } from "./file-tree";
+import { MainContent } from "./main-content";
+import { TableOfContentsSidebar } from "./table-of-contents";
+import { Page, FileTreeNode, Heading } from "./types";
+import { buildFileTree, extractHeadings } from "./utils";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function DocumentationViewer() {
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<Page | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [lastIndexed, setLastIndexed] = useState<string>('');
+  const [lastIndexed, setLastIndexed] = useState<string>("");
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [showRefreshModal, setShowRefreshModal] = useState(false);
+  const [isFileTreeOpen, setIsFileTreeOpen] = useState(false);
+  const [isTocOpen, setIsTocOpen] = useState(false);
+  const [error, setError] = useState("");
+  const mainContentScrollRef = useRef<HTMLDivElement>(null);
 
-  const repoId = 'microsoft/vscode';
-
+  /*This is a React anti-pattern. Replace with tanstack query later*/
   useEffect(() => {
     fetchDocumentation();
   }, []);
@@ -38,10 +50,10 @@ export default function DocumentationViewer() {
       // Mock data information from deepwiki vs code architecture
       const mockPages: Page[] = [
         {
-          id: '1',
-          documentation_id: 'doc-1',
-          title: 'VS Code Architecture Overview',
-          slug: 'vs-code-architecture-overview',
+          id: "1",
+          documentation_id: "doc-1",
+          title: "VS Code Architecture Overview",
+          slug: "vs-code-architecture-overview",
           content: `# VS Code Architecture Overview
 
 ## Purpose and Scope
@@ -110,111 +122,78 @@ Build artifacts include the packaged application and extension marketplace packa
 The initialization sequence defines the startup order of all components.`,
           order_index: 1,
           parent_page_id: null,
-          referenced_files: ['src/vs/code/electron-main/main.ts', 'src/vs/workbench/workbench.ts'],
+          referenced_files: [
+            "src/vs/code/electron-main/main.ts",
+            "src/vs/workbench/workbench.ts",
+          ],
           referenced_symbols: null,
           metadata: null,
-          created_at: '2025-10-19T00:00:00Z',
-          updated_at: '2025-10-19T00:00:00Z',
+          created_at: "2025-10-19T00:00:00Z",
+          updated_at: "2025-10-19T00:00:00Z",
           version: 1,
         },
         {
-          id: '2',
-          documentation_id: 'doc-1',
-          title: 'Application Startup and Process Architecture',
-          slug: 'application-startup',
+          id: "2",
+          documentation_id: "doc-1",
+          title: "Application Startup and Process Architecture",
+          slug: "application-startup",
           content: `# Application Startup and Process Architecture\n\nDetailed information about how VS Code starts up and initializes its processes.`,
           order_index: 1,
-          parent_page_id: '1',
+          parent_page_id: "1",
           referenced_files: null,
           referenced_symbols: null,
           metadata: null,
-          created_at: '2025-10-19T00:00:00Z',
-          updated_at: '2025-10-19T00:00:00Z',
+          created_at: "2025-10-19T00:00:00Z",
+          updated_at: "2025-10-19T00:00:00Z",
           version: 1,
         },
         {
-          id: '3',
-          documentation_id: 'doc-1',
-          title: 'Build System and Package Management',
-          slug: 'build-system',
+          id: "3",
+          documentation_id: "doc-1",
+          title: "Build System and Package Management",
+          slug: "build-system",
           content: `# Build System and Package Management\n\nInformation about the build system.`,
           order_index: 2,
-          parent_page_id: '1',
+          parent_page_id: "1",
           referenced_files: null,
           referenced_symbols: null,
           metadata: null,
-          created_at: '2025-10-19T00:00:00Z',
-          updated_at: '2025-10-19T00:00:00Z',
+          created_at: "2025-10-19T00:00:00Z",
+          updated_at: "2025-10-19T00:00:00Z",
           version: 1,
         },
         {
-          id: '4',
-          documentation_id: 'doc-1',
-          title: 'Extension System',
-          slug: 'extension-system',
+          id: "4",
+          documentation_id: "doc-1",
+          title: "Extension System",
+          slug: "extension-system",
           content: `# Extension System\n\nHow extensions work in VS Code.`,
           order_index: 2,
           parent_page_id: null,
           referenced_files: null,
           referenced_symbols: null,
           metadata: null,
-          created_at: '2025-10-19T00:00:00Z',
-          updated_at: '2025-10-19T00:00:00Z',
+          created_at: "2025-10-19T00:00:00Z",
+          updated_at: "2025-10-19T00:00:00Z",
           version: 1,
         },
       ];
 
       const tree = buildFileTree(mockPages);
       setFileTree(tree);
-      setLastIndexed('19 October 2025 (cc66fc)');
-      
-      setExpandedNodes(new Set(['1', '4']));
+      setLastIndexed("19 October 2025 (cc66fc)");
+
+      setExpandedNodes(new Set(["1", "4"]));
       setSelectedFile(mockPages[0]);
     } catch (error) {
-      console.error('Error fetching documentation:', error);
+      console.error("Error fetching documentation:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-// Function for API call ? 
- /*
-const fetchDocumentation = async () => {
-  try {
-    setIsLoading(true);
-
-    // Fetch from API
-    const response = await fetch(`/api/documentation?repo_id=${repoId}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch documentation');
-    }
-    
-    const data = await response.json();
-
-    // Build the file tree from API data
-    const tree = buildFileTree(data.pages);
-    setFileTree(tree);
-    setLastIndexed(data.last_indexed || '19 October 2025 (cc66fc)');
-    
-    // Auto-expand first level nodes
-    setExpandedNodes(new Set(['1', '4']));
-    
-    // Select first page by default
-    if (data.pages && data.pages.length > 0) {
-      setSelectedFile(data.pages[0]);
-    }
-  } catch (error) {
-    console.error('Error fetching documentation:', error);
-    setError('Failed to load documentation');
-  } finally {
-    setIsLoading(false);
-  }
-};
-*/
-
   const toggleExpanded = (nodeId: string) => {
-    setExpandedNodes(prev => {
+    setExpandedNodes((prev) => {
       const next = new Set(prev);
       if (next.has(nodeId)) {
         next.delete(nodeId);
@@ -223,6 +202,19 @@ const fetchDocumentation = async () => {
       }
       return next;
     });
+  };
+
+  const handleRefresh = () => {
+    try {
+      setError("");
+      /*
+        server action: call the backend to reindex the codebase and update status in postgres
+      */
+
+      setShowRefreshModal(false);
+    } catch (e) {
+      setError("could not refresh:" + e);
+    }
   };
 
   if (isLoading) {
@@ -234,7 +226,32 @@ const fetchDocumentation = async () => {
   }
 
   return (
-    <div className="flex h-full bg-background">
+    <div className="flex bg-background h-full">
+      {/* Mobile toggle buttons */}
+      <div className="fixed bottom-20 left-4 z-30 flex flex-col gap-2 lg:hidden">
+        <Button
+          size="icon"
+          variant="default"
+          onClick={() => setIsFileTreeOpen(true)}
+          className="shadow-lg"
+          aria-label="Open file tree"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+
+      <div className="fixed bottom-20 right-4 z-30 flex flex-col gap-2 xl:hidden">
+        <Button
+          size="icon"
+          variant="default"
+          onClick={() => setIsTocOpen(true)}
+          className="shadow-lg"
+          aria-label="Open table of contents"
+        >
+          <List className="h-5 w-5" />
+        </Button>
+      </div>
+
       <FileTreeSidebar
         fileTree={fileTree}
         selectedFile={selectedFile}
@@ -244,20 +261,45 @@ const fetchDocumentation = async () => {
         onSelectFile={setSelectedFile}
         onToggleExpanded={toggleExpanded}
         onSearchChange={setSearchQuery}
+        isOpen={isFileTreeOpen}
+        onClose={() => setIsFileTreeOpen(false)}
       />
 
-      <MainContent selectedFile={selectedFile} />
+      <MainContent
+        selectedFile={selectedFile}
+        scrollContainerRef={mainContentScrollRef}
+      />
 
       <TableOfContentsSidebar
         selectedFile={selectedFile}
         headings={headings}
         onRefreshClick={() => setShowRefreshModal(true)}
+        isOpen={isTocOpen}
+        onClose={() => setIsTocOpen(false)}
+        scrollContainerRef={mainContentScrollRef}
       />
 
-      <RefreshModal
-        isOpen={showRefreshModal}
-        onClose={() => setShowRefreshModal(false)}
-      />
+      <Dialog open={showRefreshModal} onOpenChange={setShowRefreshModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Refresh this wiki</DialogTitle>
+            <DialogDescription>
+              This action will reindex your codebase. Documentation and chat
+              will be unavailable for a short time.
+            </DialogDescription>
+          </DialogHeader>
+          {error && (
+            <div className="w-full p-3 bg-destructive/10 text-destructive text-sm rounded-md text-center">
+              {error}
+            </div>
+          )}
+          <DialogFooter>
+            <Button className="w-full sm:w-auto" onClick={handleRefresh}>
+              Refresh
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

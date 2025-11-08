@@ -47,7 +47,7 @@ export function InviteMemberDialog({
       }
 
       // Build full URL with token
-      const link = `${window.location.origin}/invite/${result.data.token}`;
+      const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${result.data.token}`;
       setInviteLink(link);
       setExpiresAt(result.data.expiresAt);
     } catch (err) {
