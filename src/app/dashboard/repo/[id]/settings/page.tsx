@@ -8,11 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/utils/supabase/client"; // ✅ use this
 import { useRouter, useParams } from "next/navigation";
 
-export default function OrganizationSettings() {
-  const [orgName, setOrgName] = useState("");
+export default function RepoSettings() {
+  const [repoName, setRepoName] = useState("");
   const router = useRouter();
   const params = useParams();
-  const orgId = params.id;
+  const repoId = params.id;
   const supabase = createClient(); // ✅ reads cookies automatically
 
   const handleSave = async () => {
@@ -28,36 +28,36 @@ export default function OrganizationSettings() {
       }
 
       const { data, error } = await supabase
-        .from("organizations")
-        .update({ name: orgName })
-        .eq("id", orgId)
+        .from("repositories")
+        .update({ name: repoName })
+        .eq("id", repoId)
         .select();
 
       if (error) throw error;
-      console.log("✅ Updated organization:", data);
+      console.log("✅ Updated repo:", data);
 
-      router.push(`/dashboard/org/${orgId}`);
+      router.push(`/dashboard/repo/${repoId}`);
     } catch (err) {
-      console.error("❌ Failed to update organization:", err);
+      console.error("❌ Failed to update repo:", err);
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 py-12">
-      <h1 className="text-3xl font-bold">Organization Settings</h1>
+      <h1 className="text-3xl font-bold">Repository Settings</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Organization Details</CardTitle>
+          <CardTitle>Repository Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="orgName">Organization Name</Label>
+            <Label htmlFor="repoName">Repository Name</Label>
             <Input
-              id="orgName"
-              value={orgName}
-              onChange={(e) => setOrgName(e.target.value)}
-              placeholder="Enter organization name"
+              id="repoName"
+              value={repoName}
+              onChange={(e) => setRepoName(e.target.value)}
+              placeholder="Enter repository name"
             />
           </div>
           <Button onClick={handleSave}>Save</Button>
