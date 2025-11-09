@@ -24,8 +24,11 @@ export function DashboardSidebar() {
 
   // Determine the current context based on pathname patterns
   const currentContext = useMemo(() => {
+    if (pathname.startsWith("/dashboard/organizations")) {
+      return { type: "organizations", id };
+    }
     if (pathname.startsWith("/dashboard/org/") && id) {
-      return { type: "organization", id };
+      return { type: "org", id };
     }
     if (pathname.startsWith("/dashboard/repo/") && id) {
       return { type: "repository", id };
@@ -36,7 +39,18 @@ export function DashboardSidebar() {
   // Render different sidebar items based on context
   const renderContextualItems = () => {
     switch (currentContext.type) {
-      case "organization":
+      case "organizations":
+        return (
+          <>
+            <SidebarItem
+              icon={<Building2 className="h-5 w-5" />}
+              label="Organizations"
+              action={() => router.push(`/dashboard/organizations`)}
+            />
+          </>
+        );
+
+      case "org":
         return (
           <>
             <SidebarItem
