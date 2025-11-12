@@ -5,6 +5,7 @@ import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 import MessageList from "./message-list";
 import ChatInput from "./chat-input";
 import AnswerPanel from "./answer-panel";
+import ChatEmptyState from "./chat-empty-state";
 
 interface Message {
   id: number;
@@ -184,11 +185,18 @@ export default function ChatInterface() {
     }
   }, [initialMessage]);
 
+  // Show empty state when there are no messages and no initial message
+  const showEmptyState = messages.length === 0 && !initialMessage;
+
   return (
     <div className="flex h-[calc(100vh-64px)] bg-grey-950 text-grey-300">
       {/* Chat Column */}
       <div className="flex flex-col w-1/2 border-r border-grey-800">
-        <MessageList messages={messages} loading={responseLoading} />
+        {showEmptyState ? (
+          <ChatEmptyState onSendMessage={sendMessage} />
+        ) : (
+          <MessageList messages={messages} loading={responseLoading} />
+        )}
         <ChatInput
           value={inputValue}
           onChange={setInputValue}
