@@ -37,7 +37,7 @@ export default function ChatInterface() {
   const initialMessage = useChatUIStore((state) => state.initialMessage);
   const hasSentInitialMessage = useRef(false);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (chatInputDisabled || !text.trim()) return;
 
     setChatInputDisabled(true);
@@ -74,22 +74,36 @@ export default function ChatInterface() {
 
     setInputValue("");
 
-    setTimeout(() => {
-      //simulate LLM response
+    try {
+      // Call the streaming API endpoint
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: userQuestion }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+      }
+
+      if (!response.body) {
+        throw new Error("No response body");
+      }
+
+      // Handle the streaming response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = "";
+      const assistantMessageId = Date.now();
+
+      // Create initial assistant message
       setMessages((prevMessages) => [
         ...prevMessages,
         {
-          id: prevMessages.length + 1,
-          text: `Hello! I'm an AI assistant. I can help you understand and navigate the codebase.
-
-Since you're asking about this repository, I can help you with questions about:
-
-- Architecture and design patterns
-- Code organization and structure
-- Specific implementations and how they work
-- Relationships between different components
-
-Feel free to ask me specific questions about how the code works, where certain functionality is implemented, or how different components interact with each other!`,
+          id: assistantMessageId,
+          text: "",
           sender: "assistant",
           timestamp: new Date().toLocaleTimeString("en-US", {
             hour: "2-digit",
@@ -98,47 +112,81 @@ Feel free to ask me specific questions about how the code works, where certain f
         },
       ]);
 
-      // Update the conversation turn with code snippets
+      // Hide loading indicator now that streaming is about to start
+      setResponseLoading(false);
+
+      // Update conversation turn
       setConversationTurns((prevTurns) =>
         prevTurns.map((turn) =>
           turn.id === turnId
             ? {
                 ...turn,
                 loading: false,
-                codeSnippets: [
-                  {
-                    file: `example-${turnId}.ts`,
-                    code: `"use client";
+              }
+            : turn,
+        ),
+      );
 
-import React, { useState } from "react";
-import MessageList from "./message-list";
-import ChatInput from "./chat-input";
-import AnswerPanel from "./answer-panel";
+      // Read the stream
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          console.log("Stream done. Final accumulated text:", accumulatedText);
+          break;
+        }
 
-interface Message {
-  id: number;
-  text: string;
-  sender: "user" | "assistant";
-  timestamp: string;
-}
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
 
-interface CodeSnippet {
-  file: string;
-  code: string;
-}
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") continue;
 
-export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState("");
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.content) {
+                accumulatedText += parsed.content;
 
-  const handleSend = () => {
-    if (inputValue.trim()) {
-      setMessages([
-        ...messages,
+                // Update the assistant message with accumulated text
+                setMessages((prevMessages) =>
+                  prevMessages.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, text: accumulatedText }
+                      : msg,
+                  ),
+                );
+              }
+            } catch (e) {
+              // Skip invalid JSON
+              console.warn("Failed to parse SSE data:", line);
+            }
+          }
+        }
+      }
+
+      // Update conversation turn with final state
+      setConversationTurns((prevTurns) =>
+        prevTurns.map((turn) =>
+          turn.id === turnId
+            ? {
+                ...turn,
+                loading: false,
+                codeSnippets: [], // TODO: Extract code snippets from response
+              }
+            : turn,
+        ),
+      );
+    } catch (error) {
+      console.error("Error sending message:", error);
+
+      // Add error message
+      setMessages((prevMessages) => [
+        ...prevMessages,
         {
-          id: messages.length + 1,
-          text: inputValue,
-          sender: "user",
+          id: Date.now(),
+          text: `Sorry, I encountered an error: ${error instanceof Error ? error.message : "Unknown error"}. Please try again.`,
+          sender: "assistant",
           timestamp: new Date().toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
@@ -146,30 +194,22 @@ export default function ChatInterface() {
         },
       ]);
 
-      setInputValue("");
-    }
-  };
-
-  return (
-    <div className="flex h-[calc(100vh-64px)]">
-      <MessageList messages={messages} />
-      <ChatInput
-        value={inputValue}
-        onChange={setInputValue}
-        onSend={handleSend}
-      />
-    </div>
-  );
-}`,
-                  },
-                ],
+      // Update conversation turn to show error
+      setConversationTurns((prevTurns) =>
+        prevTurns.map((turn) =>
+          turn.id === turnId
+            ? {
+                ...turn,
+                loading: false,
+                codeSnippets: [],
               }
             : turn,
         ),
       );
+    } finally {
       setResponseLoading(false);
       setChatInputDisabled(false);
-    }, 5000);
+    }
   };
 
   const handleSend = () => {
