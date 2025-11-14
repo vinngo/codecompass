@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import {
@@ -8,46 +10,68 @@ import {
   AlertTriangle,
   Minus,
 } from "lucide-react";
+import { motion } from "framer-motion";
+import Link from "next/link";
 
 const Features = dynamic(() => import("./features").then((mod) => mod.default));
 const Comparison = dynamic(() =>
   import("./comparison").then((mod) => mod.default),
 );
-const Demo = dynamic(() => import("./demo").then((mod) => mod.default));
 
 export default function Hero() {
   return (
     <div className="flex flex-col items-center justify-center">
       {/* Hero Section - Full Screen */}
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 sm:px-6">
-        <h1
+        <motion.h1
           className="flex flex-col text-7xl font-medium items-center justify-center"
           style={{ lineHeight: "1.2" }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <span
+          <motion.span
             className="block text-foreground"
             style={{ textShadow: "0 0 4px currentColor" }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
           >
             Navigate any codebase
-          </span>
-          <span
+          </motion.span>
+          <motion.span
             className="text-accent"
             style={{ textShadow: "0 0 4px currentColor" }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
           >
             in minutes, not months
-          </span>
-        </h1>
-        <p className="pt-2 text-foreground my-3 text-sm sm:mt-5 lg:mb-0 sm:text-base lg:text-lg text-center max-w-4xl">
+          </motion.span>
+        </motion.h1>
+        <motion.p
+          className="pt-2 text-foreground my-3 text-sm sm:mt-5 lg:mb-0 sm:text-base lg:text-lg text-center max-w-4xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
+        >
           CodeCompass is <span className="font-semibold italic">the</span>{" "}
           <span className="text-accent font-semibold italic">open-source</span>{" "}
           AI-powered code navigation tool.
           <br />
           Index your project • Generate documentation • Onboard your team faster
-        </p>
-        <div className="flex flex-row gap-4">
-          <Button>Get started</Button>
+        </motion.p>
+        <motion.div
+          className="flex flex-row gap-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.8, ease: "easeOut" }}
+        >
+          <Button>
+            <Link href="/login">Get started</Link>
+          </Button>
           <Button variant="outline">Our Features</Button>
-        </div>
+        </motion.div>
       </div>
 
       {/* Developer Onboarding Crisis Section */}
@@ -63,7 +87,18 @@ export default function Hero() {
         {/* Asymmetric Grid Layout */}
         <div className="space-y-6">
           {/* Large Card - Full Width */}
-          <div className="border border-border rounded-xl p-8 bg-card hover:border-accent/50 transition-colors">
+          <motion.div
+            className="border border-border rounded-xl p-8 bg-card transition-colors"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            whileHover={{
+              y: -8,
+              scale: 1.02,
+              borderColor: "hsl(var(--accent) / 0.5)",
+            }}
+          >
             <div className="flex flex-col md:flex-row gap-8">
               <div className="flex-1">
                 <div className="flex items-start gap-3 mb-4">
@@ -96,16 +131,56 @@ export default function Hero() {
                   </div>
                   <div className="space-y-3">
                     <div className="h-3 bg-background rounded overflow-hidden border border-border">
-                      <div className="h-full w-1/6 bg-teal-500/50"></div>
+                      <motion.div
+                        className="h-full bg-teal-500/50"
+                        initial={{ width: 0 }}
+                        whileInView={{ width: "16.666%" }}
+                        viewport={{ once: true }}
+                        transition={{
+                          duration: 0.5,
+                          delay: 0.2,
+                          ease: "easeOut",
+                        }}
+                      />
                     </div>
                     <div className="h-3 bg-background rounded overflow-hidden border border-border">
-                      <div className="h-full w-2/6 bg-teal-500/50"></div>
+                      <motion.div
+                        className="h-full bg-teal-500/50"
+                        initial={{ width: 0 }}
+                        whileInView={{ width: "33.333%" }}
+                        viewport={{ once: true }}
+                        transition={{
+                          duration: 0.5,
+                          delay: 0.3,
+                          ease: "easeOut",
+                        }}
+                      />
                     </div>
                     <div className="h-3 bg-background rounded overflow-hidden border border-border">
-                      <div className="h-full w-3/6 bg-teal-400/50"></div>
+                      <motion.div
+                        className="h-full bg-teal-400/50"
+                        initial={{ width: 0 }}
+                        whileInView={{ width: "50%" }}
+                        viewport={{ once: true }}
+                        transition={{
+                          duration: 0.5,
+                          delay: 0.4,
+                          ease: "easeOut",
+                        }}
+                      />
                     </div>
                     <div className="h-3 bg-background rounded overflow-hidden border border-border">
-                      <div className="h-full w-5/6 bg-teal-300/50"></div>
+                      <motion.div
+                        className="h-full bg-teal-300/50"
+                        initial={{ width: 0 }}
+                        whileInView={{ width: "83.333%" }}
+                        viewport={{ once: true }}
+                        transition={{
+                          duration: 0.5,
+                          delay: 0.5,
+                          ease: "easeOut",
+                        }}
+                      />
                     </div>
                   </div>
                   <div className="flex justify-between mt-3 text-sm text-muted-foreground">
@@ -115,12 +190,23 @@ export default function Hero() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Two Smaller Cards - Side by Side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Card 2 - Outdated Docs */}
-            <div className="border border-border rounded-xl p-6 bg-card hover:border-accent/50 transition-colors">
+            <motion.div
+              className="border border-border rounded-xl p-6 bg-card transition-colors"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
+              whileHover={{
+                y: -8,
+                scale: 1.02,
+                borderColor: "hsl(var(--accent) / 0.5)",
+              }}
+            >
               <div className="flex items-start gap-3 mb-4">
                 <FileWarning className="w-6 h-6 text-teal-400 mt-1" />
                 <div>
@@ -162,10 +248,21 @@ export default function Hero() {
                   Knowledge gaps
                 </span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Card 3 - Team Bottlenecks */}
-            <div className="border border-border rounded-xl p-6 bg-card hover:border-accent/50 transition-colors">
+            <motion.div
+              className="border border-border rounded-xl p-6 bg-card transition-colors"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+              whileHover={{
+                y: -8,
+                scale: 1.02,
+                borderColor: "hsl(var(--accent) / 0.5)",
+              }}
+            >
               <div className="flex items-start gap-3 mb-4">
                 <Users className="w-6 h-6 text-teal-400 mt-1" />
                 <div>
@@ -209,7 +306,7 @@ export default function Hero() {
                   Reduced productivity
                 </span>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
@@ -218,9 +315,6 @@ export default function Hero() {
 
       {/* How CodeCompass Will Stand Apart Section */}
       <Comparison />
-
-      {/* Demo/Examples Section */}
-      <Demo />
     </div>
   );
 }

@@ -30,7 +30,7 @@ export function RepoButton({ repo }: RepoButtonProps) {
     >
       <div className="flex flex-row gap-4 text-sm w-full overflow-hidden">
         {/* Surround in a circular container */}
-        <div className="rounded-full bg-black p-2.5 shrink-0">
+        <div className="rounded-full dark:bg-black border-2 border-primary p-2.5 shrink-0">
           {type === "github" ? (
             <Github className="w-4 h-4" />
           ) : type === "gitlab" ? (
