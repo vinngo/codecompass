@@ -6,6 +6,7 @@ import MessageList from "./message-list";
 import ChatInput from "./chat-input";
 import AnswerPanel from "./answer-panel";
 import ChatEmptyState from "./chat-empty-state";
+import ModelSelector, { AVAILABLE_MODELS } from "./model-selector";
 
 interface Message {
   id: number;
@@ -36,6 +37,8 @@ export default function ChatInterface() {
   const [chatInputDisabled, setChatInputDisabled] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState("");
   const initialMessage = useChatUIStore((state) => state.initialMessage);
+  const selectedModel = useChatUIStore((state) => state.selectedModel);
+  const setSelectedModel = useChatUIStore((state) => state.setSelectedModel);
   const hasSentInitialMessage = useRef(false);
 
   const sendMessage = async (text: string) => {
@@ -82,7 +85,10 @@ export default function ChatInterface() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query: userQuestion }),
+        body: JSON.stringify({
+          query: userQuestion,
+          model: selectedModel.id,
+        }),
       });
 
       if (!response.ok) {
@@ -262,6 +268,14 @@ export default function ChatInterface() {
     <div className="flex h-[calc(100vh-64px)] bg-grey-950 text-grey-300">
       {/* Chat Column */}
       <div className="flex flex-col w-1/2 border-r border-grey-800">
+        {/* Header with Model Selector */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <ModelSelector
+            selectedModel={selectedModel}
+            onSelectModel={setSelectedModel}
+          />
+        </div>
+
         {showEmptyState ? (
           <ChatEmptyState onSendMessage={sendMessage} />
         ) : (
