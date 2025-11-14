@@ -92,40 +92,15 @@ export default function ChatInterface() {
         throw new Error("No response body");
       }
 
-      // Handle the streaming response
+      // Handle the streaming response with client-side transformation
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulatedText = "";
       const assistantMessageId = Date.now();
 
-      // Create initial assistant message
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          id: assistantMessageId,
-          text: "",
-          sender: "assistant",
-          timestamp: new Date().toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        },
-      ]);
-
-      // Hide loading indicator now that streaming is about to start
-      setResponseLoading(false);
-
-      // Update conversation turn
-      setConversationTurns((prevTurns) =>
-        prevTurns.map((turn) =>
-          turn.id === turnId
-            ? {
-                ...turn,
-                loading: false,
-              }
-            : turn,
-        ),
-      );
+      // Create initial assistant message (but don't show it yet)
+      const assistantMessageCreated = false;
+      let firstContentReceived = false;
 
       // Read the stream
       while (true) {
@@ -135,32 +110,87 @@ export default function ChatInterface() {
           break;
         }
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        // Handle backend's complex format: numeric-keyed JSON objects
+        const rawText = decoder.decode(value, { stream: true });
 
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6).trim();
-            if (data === "[DONE]") continue;
+        // Multiple JSON objects may be concatenated, split them
+        const jsonObjects = rawText.split(/(?<=\})(?=\{)/);
 
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.content) {
-                accumulatedText += parsed.content;
+        for (const jsonStr of jsonObjects) {
+          try {
+            const parsed = JSON.parse(jsonStr);
 
-                // Update the assistant message with accumulated text
-                setMessages((prevMessages) =>
-                  prevMessages.map((msg) =>
-                    msg.id === assistantMessageId
-                      ? { ...msg, text: accumulatedText }
-                      : msg,
-                  ),
-                );
+            // Backend sends objects with numeric keys representing byte arrays
+            if (
+              typeof parsed === "object" &&
+              parsed !== null &&
+              "0" in parsed
+            ) {
+              // Convert numeric keys to Uint8Array and decode
+              const bytes = new Uint8Array(Object.values(parsed) as number[]);
+              const actualText = decoder.decode(bytes);
+
+              // Backend sends SSE format: "data: {...}\n\n"
+              if (actualText.startsWith("data: ")) {
+                try {
+                  const sseJsonStr = actualText.slice(6).trim(); // Remove "data: " prefix
+                  const dataObj = JSON.parse(sseJsonStr);
+
+                  // Extract delta from nested structure: {"content": {"delta": "..."}}
+                  if (
+                    dataObj.content &&
+                    dataObj.content.delta &&
+                    typeof dataObj.content.delta === "string"
+                  ) {
+                    accumulatedText += dataObj.content.delta;
+
+                    // On first content, hide loading and create assistant message
+                    if (!firstContentReceived) {
+                      firstContentReceived = true;
+                      setResponseLoading(false);
+
+                      setConversationTurns((prevTurns) =>
+                        prevTurns.map((turn) =>
+                          turn.id === turnId
+                            ? {
+                                ...turn,
+                                loading: false,
+                              }
+                            : turn,
+                        ),
+                      );
+
+                      setMessages((prevMessages) => [
+                        ...prevMessages,
+                        {
+                          id: assistantMessageId,
+                          text: accumulatedText,
+                          sender: "assistant",
+                          timestamp: new Date().toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }),
+                        },
+                      ]);
+                    } else {
+                      // Update the assistant message with accumulated text
+                      setMessages((prevMessages) =>
+                        prevMessages.map((msg) =>
+                          msg.id === assistantMessageId
+                            ? { ...msg, text: accumulatedText }
+                            : msg,
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  // Ignore parse errors for non-delta chunks
+                  console.warn("Failed to parse SSE data:", actualText);
+                }
               }
-            } catch (e) {
-              // Skip invalid JSON
-              console.warn("Failed to parse SSE data:", line);
             }
+          } catch (e) {
+            // Ignore parse errors - may be incomplete JSON at chunk boundary
           }
         }
       }
