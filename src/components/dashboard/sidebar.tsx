@@ -2,6 +2,14 @@
 
 import { useState, createContext, useContext } from "react";
 import { motion } from "motion/react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
+import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 
 // Context to share sidebar state with SidebarItems
 const SidebarContext = createContext<{ isExpanded: boolean }>({
@@ -46,7 +54,9 @@ export function SidebarItem({
   const { isExpanded } = useSidebar();
 
   return (
-    <div
+    <motion.div
+      layout
+      transition={{ duration: 0.3, ease: "easeInOut" }}
       onClick={action}
       className="flex items-center gap-3 px-3 py-2 hover:bg-muted rounded-md cursor-pointer transition-colors w-full"
     >
@@ -58,6 +68,51 @@ export function SidebarItem({
           {label}
         </span>
       )}
-    </div>
+    </motion.div>
+  );
+}
+
+// Sidebar dropdown item with submenu
+export function SidebarDropdownItem({
+  icon,
+  label,
+  items,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  items: Array<{
+    label: string;
+    icon?: React.ReactNode;
+    action: () => void;
+  }>;
+}) {
+  const { isExpanded: sideBarExpanded } = useSidebar();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <div className="flex items-center gap-3 px-3 py-2 hover:bg-muted rounded-md cursor-pointer transition-colors w-full">
+          <div className="shrink-0 w-6 h-6 flex items-center justify-center">
+            {icon}
+          </div>
+          {sideBarExpanded && (
+            <>
+              <span className="text-sm text-foreground truncate whitespace-nowrap flex-1">
+                {label}
+              </span>
+              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+            </>
+          )}
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="bottom" align="start" className="w-48">
+        {items.map((item, index) => (
+          <DropdownMenuItem key={index} onClick={item.action}>
+            {item.icon && <span className="mr-2">{item.icon}</span>}
+            {item.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
