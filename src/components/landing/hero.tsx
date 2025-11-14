@@ -42,8 +42,7 @@ export default function Hero() {
           <span className="text-accent font-semibold italic">open-source</span>{" "}
           AI-powered code navigation tool.
           <br />
-          Index your project • Generate documentation • Onboard your team using
-          RAG test powered chat
+          Index your project • Generate documentation • Onboard your team faster
         </p>
         <div className="flex flex-row gap-4">
           <Button>Get started</Button>
