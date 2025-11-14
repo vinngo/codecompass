@@ -5,8 +5,8 @@ import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 import MessageList from "./message-list";
 import ChatInput from "./chat-input";
 import AnswerPanel from "./answer-panel";
-import ModelSelector, { AVAILABLE_MODELS, LLMModel } from "./model-selector";
 import ChatEmptyState from "./chat-empty-state";
+import ModelSelector, { AVAILABLE_MODELS } from "./model-selector";
 
 interface Message {
   id: number;
@@ -36,31 +36,11 @@ export default function ChatInterface() {
   const [responseLoading, setResponseLoading] = useState<boolean>(false);
   const [chatInputDisabled, setChatInputDisabled] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState("");
-  const [selectedModel, setSelectedModel] = useState<LLMModel>(AVAILABLE_MODELS[0]);
   const initialMessage = useChatUIStore((state) => state.initialMessage);
+  const selectedModel = useChatUIStore((state) => state.selectedModel);
+  const setSelectedModel = useChatUIStore((state) => state.setSelectedModel);
   const hasSentInitialMessage = useRef(false);
 
-  const handleModelChange = async (model: LLMModel) => {
-    setSelectedModel(model);
-    console.log('Selected model:', model.id);
-    
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('selectedModel', JSON.stringify(model));
-    }
-    
-  };
-
-  useEffect(() => {
-    const savedModel = useChatUIStore.getState().selectedModel;
-    if (savedModel) {
-      const model = AVAILABLE_MODELS.find(m => m.id === savedModel.id);
-      if (model) {
-        setSelectedModel(model);
-      }
-    }
-  }, []);
-
-  const sendMessage = (text: string) => {
   const sendMessage = async (text: string) => {
     if (chatInputDisabled || !text.trim()) return;
 
@@ -105,7 +85,10 @@ export default function ChatInterface() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query: userQuestion }),
+        body: JSON.stringify({
+          query: userQuestion,
+          model: selectedModel.id,
+        }),
       });
 
       if (!response.ok) {
@@ -285,6 +268,14 @@ export default function ChatInterface() {
     <div className="flex h-[calc(100vh-64px)] bg-grey-950 text-grey-300">
       {/* Chat Column */}
       <div className="flex flex-col w-1/2 border-r border-grey-800">
+        {/* Header with Model Selector */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <ModelSelector
+            selectedModel={selectedModel}
+            onSelectModel={setSelectedModel}
+          />
+        </div>
+
         {showEmptyState ? (
           <ChatEmptyState onSendMessage={sendMessage} />
         ) : (
@@ -298,22 +289,8 @@ export default function ChatInterface() {
         />
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Chat Column */}
-        <div className="flex flex-col w-1/2 border-r border-grey-800">
-          <MessageList messages={messages} loading={responseLoading} />
-          <ChatInput
-            value={inputValue}
-            onChange={setInputValue}
-            onSend={handleSend}
-            disabled={chatInputDisabled}
-          />
-        </div>
-
-        {/* Answers Column */}
-        <AnswerPanel conversationTurns={conversationTurns} />
-      </div>
+      {/* Answers Column */}
+      <AnswerPanel conversationTurns={conversationTurns} />
     </div>
   );
 }

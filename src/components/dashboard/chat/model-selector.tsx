@@ -72,7 +72,7 @@ export default function ModelSelector({
 
       <DropdownMenuContent
         className="bg-card border-border"
-        align="end"
+        align="start"
         sideOffset={8}
       >
         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
