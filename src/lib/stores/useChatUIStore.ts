@@ -1,18 +1,46 @@
 import { create } from "zustand";
+import { persist } from 'zustand/middleware';
+
+interface LLMModel {
+  id: string;
+  name: string;
+  provider: string;
+}
 
 interface ChatUIState {
   isExpanded: boolean;
-  initialMessage: string;
-  expand: (message: string) => void;
+  initialMessage: string | null;
+  selectedModel: LLMModel | null;
+  
+  expand: (message?: string) => void;
   minimize: () => void;
-  toggle: () => void;
+  setSelectedModel: (model: LLMModel) => void;
 }
 
-export const useChatUIStore = create<ChatUIState>((set) => ({
-  isExpanded: false,
-  initialMessage: "",
-  expand: (message: string) =>
-    set({ isExpanded: true, initialMessage: message }),
-  minimize: () => set({ isExpanded: false, initialMessage: "" }),
-  toggle: () => set((state) => ({ isExpanded: !state.isExpanded })),
-}));
+export const useChatUIStore = create<ChatUIState>()(
+  persist(
+    (set) => ({
+      isExpanded: false,
+      initialMessage: null,
+      selectedModel: null,
+
+      expand: (message) => set({ 
+        isExpanded: true, 
+        initialMessage: message || null 
+      }),
+      
+      minimize: () => set({ 
+        isExpanded: false, 
+        initialMessage: null 
+      }),
+
+      setSelectedModel: (model) => set({ selectedModel: model }),
+    }),
+    {
+      name: 'chat-ui-storage',
+      partialize: (state) => ({ 
+        selectedModel: state.selectedModel 
+      }),
+    }
+  )
+);

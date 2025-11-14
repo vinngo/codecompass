@@ -5,6 +5,7 @@ import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 import MessageList from "./message-list";
 import ChatInput from "./chat-input";
 import AnswerPanel from "./answer-panel";
+import ModelSelector, { AVAILABLE_MODELS, LLMModel } from "./model-selector";
 
 interface Message {
   id: number;
@@ -34,8 +35,29 @@ export default function ChatInterface() {
   const [responseLoading, setResponseLoading] = useState<boolean>(false);
   const [chatInputDisabled, setChatInputDisabled] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState("");
+  const [selectedModel, setSelectedModel] = useState<LLMModel>(AVAILABLE_MODELS[0]);
   const initialMessage = useChatUIStore((state) => state.initialMessage);
   const hasSentInitialMessage = useRef(false);
+
+  const handleModelChange = async (model: LLMModel) => {
+    setSelectedModel(model);
+    console.log('Selected model:', model.id);
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedModel', JSON.stringify(model));
+    }
+    
+  };
+
+  useEffect(() => {
+    const savedModel = useChatUIStore.getState().selectedModel;
+    if (savedModel) {
+      const model = AVAILABLE_MODELS.find(m => m.id === savedModel.id);
+      if (model) {
+        setSelectedModel(model);
+      }
+    }
+  }, []);
 
   const sendMessage = (text: string) => {
     if (chatInputDisabled || !text.trim()) return;
@@ -185,20 +207,32 @@ export default function ChatInterface() {
   }, [initialMessage]);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-grey-950 text-grey-300">
-      {/* Chat Column */}
-      <div className="flex flex-col w-1/2 border-r border-grey-800">
-        <MessageList messages={messages} loading={responseLoading} />
-        <ChatInput
-          value={inputValue}
-          onChange={setInputValue}
-          onSend={handleSend}
-          disabled={chatInputDisabled}
+    <div className="flex flex-col h-[calc(100vh-64px)] bg-grey-950 text-grey-300">
+      {/* Header with Model Selector */}
+      <div className="border-b border-grey-800 px-4 py-3 flex items-center justify-between bg-grey-900">
+        <h2 className="text-sm font-semibold text-grey-300">Chat</h2>
+        <ModelSelector 
+          selectedModel={selectedModel}
+          onSelectModel={handleModelChange}
         />
       </div>
 
-      {/* Answers Column */}
-      <AnswerPanel conversationTurns={conversationTurns} />
+      {/* Main Chat Area */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Chat Column */}
+        <div className="flex flex-col w-1/2 border-r border-grey-800">
+          <MessageList messages={messages} loading={responseLoading} />
+          <ChatInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSend={handleSend}
+            disabled={chatInputDisabled}
+          />
+        </div>
+
+        {/* Answers Column */}
+        <AnswerPanel conversationTurns={conversationTurns} />
+      </div>
     </div>
   );
 }
