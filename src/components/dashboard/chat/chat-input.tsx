@@ -1,5 +1,6 @@
-import React from "react";
+"use client";
 import { Send } from "lucide-react";
+import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 
 interface ChatInputProps {
   value: string;
@@ -14,6 +15,8 @@ export default function ChatInput({
   onSend,
   disabled,
 }: ChatInputProps) {
+  const { initialMessage } = useChatUIStore();
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !disabled) {
       e.preventDefault();
@@ -29,7 +32,9 @@ export default function ChatInput({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask a follow-up question"
+            placeholder={
+              initialMessage ? "Ask a follow-up question" : "Ask CodeCompass"
+            }
             rows={2}
             disabled={disabled}
             className="w-full bg-grey-800 text-grey-100 px-4 py-3 pr-12 rounded-lg border border-grey-700 focus:outline-none
