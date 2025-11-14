@@ -42,6 +42,47 @@ export default function RepoSettings() {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error("User not authenticated", userError);
+        return;
+      }
+
+      // Optional: confirmation guard
+      const confirmDelete = confirm(
+        "Are you sure you want to delete this repository? This cannot be undone."
+      );
+      if (!confirmDelete) return;
+
+      // ⭐ Fetch the org_id for this repo BEFORE deleting it
+      const { data: repo, error: repoError } = await supabase
+        .from("repositories")
+        .select("organization_id")
+        .eq("id", repoId)
+        .single();
+
+      const orgId = repo?.organization_id;
+
+      const { error } = await supabase
+        .from("repositories")
+        .delete()
+        .eq("id", repoId);
+
+      if (error) throw error;
+
+      console.log("🗑️ Repository deleted");
+      router.push(`/dashboard/org/${orgId}`); // Redirect wherever you want
+    } catch (err) {
+      console.error("❌ Failed to delete repository:", err);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-8 py-12">
       <h1 className="text-3xl font-bold">Repository Settings</h1>
@@ -63,6 +104,11 @@ export default function RepoSettings() {
           <Button onClick={handleSave}>Save</Button>
         </CardContent>
       </Card>
+      <div className="pt-2 max-w-2x1 mx-auto">
+        <Button variant="destructive" onClick={handleDelete} className="mt-2">
+          Delete Repository
+        </Button>
+      </div>
     </div>
   );
 }

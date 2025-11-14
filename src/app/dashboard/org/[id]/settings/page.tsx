@@ -42,6 +42,38 @@ export default function OrganizationSettings() {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error("User not authenticated", userError);
+        return;
+      }
+
+      // Optional: confirmation guard
+      const confirmDelete = confirm(
+        "Are you sure you want to delete this organizatioin? This cannot be undone."
+      );
+      if (!confirmDelete) return;
+
+      const { error } = await supabase
+        .from("organizations")
+        .delete()
+        .eq("id", orgId);
+
+      if (error) throw error;
+
+      console.log("🗑️ Organization deleted");
+      router.push("/dashboard/organizations"); // Redirect wherever you want
+    } catch (err) {
+      console.error("❌ Failed to delete organization:", err);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-8 py-12">
       <h1 className="text-3xl font-bold">Organization Settings</h1>
@@ -63,6 +95,11 @@ export default function OrganizationSettings() {
           <Button onClick={handleSave}>Save</Button>
         </CardContent>
       </Card>
+      <div className="pt-2 max-w-2x1 mx-auto">
+        <Button variant="destructive" onClick={handleDelete} className="mt-2">
+          Delete Organization
+        </Button>
+      </div>
     </div>
   );
 }
