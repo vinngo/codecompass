@@ -18,7 +18,7 @@ export default function MessageBubble({ text, sender }: MessageBubbleProps) {
   if (sender === "user") {
     return (
       <div className="mb-8 flex flex-row gap-6 px-5">
-        <div className="text-gray-100 tracking-wide text-2xl leading-relaxed">
+        <div className="text-gray-700 dark:text-gray-300 tracking-wide text-2xl leading-relaxed">
           {text}
         </div>
 
@@ -35,7 +35,9 @@ export default function MessageBubble({ text, sender }: MessageBubbleProps) {
       <div className="mt-6">
         <div className="bg-elevated rounded-lg border border-gray-800 p-6">
           <div className="prose prose-invert max-w-none">
-            <p className="text-gray-300 leading-relaxed">{text}</p>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              {text}
+            </p>
           </div>
           <div className="flex gap-2 mt-4 pt-4 border-t border-gray-800">
             <button className="p-2 hover:bg-gray-800 rounded-md transition-colors">

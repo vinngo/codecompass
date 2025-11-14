@@ -174,7 +174,7 @@ export function FileTreeSidebar({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search..."
-              className="w-full bg-gray-900 border border-gray-800 rounded pl-7 pr-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className="w-full bg-white dark:bg-gray-900 border border-gray-800 rounded pl-7 pr-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
             />
           </div>
         </div>
