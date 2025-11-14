@@ -5,19 +5,21 @@ import { Sidebar, SidebarItem } from "@/components/dashboard/sidebar";
 import {
   FolderCode,
   Building2,
-  Home,
   Users,
   Settings,
-  FileText,
-  MessageSquare,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
+import { useChatUIStore } from "@/lib/stores/useChatUIStore";
+import ConversationPanel from "./conversation-panel";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const params = useParams();
   const router = useRouter();
+
+  const { toggle, isExpanded: chatExpanded } = useChatUIStore();
 
   // Access dynamic route parameters
   const id = params.id as string | undefined;
@@ -65,17 +67,12 @@ export function DashboardSidebar() {
         return (
           <>
             <SidebarItem
-              icon={<FileText className="h-5 w-5" />}
-              label="Documentation"
-              action={() => router.push(`/dashboard/repo/${currentContext.id}`)}
+              icon={<ArrowLeftRight className="h-5 w-5" />}
+              label={chatExpanded ? "Documentation" : "Chat"}
+              action={() => toggle()}
             />
-            <SidebarItem
-              icon={<MessageSquare className="h-5 w-5" />}
-              label="Chat"
-              action={() =>
-                router.push(`/dashboard/repo/${currentContext.id}/chat`)
-              }
-            />
+
+            {chatExpanded && <ConversationPanel />}
             <SidebarItem
               icon={<Settings className="h-5 w-5" />}
               label="Settings"
