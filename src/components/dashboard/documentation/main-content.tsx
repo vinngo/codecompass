@@ -77,7 +77,7 @@ export function MainContent({
                   return (
                     <h1
                       id={id}
-                      className="text-3xl font-bold text-white mb-6 mt-2 scroll-mt-20"
+                      className="text-3xl font-bold text-gray-800 dark:text-white mb-6 mt-2 scroll-mt-20"
                       {...props}
                     >
                       {children}
@@ -90,7 +90,7 @@ export function MainContent({
                   return (
                     <h2
                       id={id}
-                      className="text-2xl font-semibold text-white mb-4 mt-10 scroll-mt-20"
+                      className="text-2xl font-semibold text-gray-800 dark:text-white mb-4 mt-10 scroll-mt-20"
                       {...props}
                     >
                       {children}
@@ -103,7 +103,7 @@ export function MainContent({
                   return (
                     <h3
                       id={id}
-                      className="text-xl font-semibold text-grey-100 mb-3 mt-8 scroll-mt-20"
+                      className="text-xl font-semibold text-gray-800 dark:text-white mb-3 mt-8 scroll-mt-20"
                       {...props}
                     >
                       {children}
@@ -116,7 +116,7 @@ export function MainContent({
                   return (
                     <h4
                       id={id}
-                      className="text-lg font-semibold text-grey-100 mb-3 mt-6 scroll-mt-20"
+                      className="text-lg font-semibold text-gray-800 dark:text-white mb-3 mt-6 scroll-mt-20"
                       {...props}
                     >
                       {children}
@@ -129,7 +129,7 @@ export function MainContent({
                   return (
                     <h5
                       id={id}
-                      className="text-base font-semibold text-grey-100 mb-2 mt-4 scroll-mt-20"
+                      className="text-base font-semibold text-gray-800 dark:text-white mb-2 mt-4 scroll-mt-20"
                       {...props}
                     >
                       {children}
@@ -142,7 +142,7 @@ export function MainContent({
                   return (
                     <h6
                       id={id}
-                      className="text-sm font-semibold text-grey-100 mb-2 mt-4 scroll-mt-20"
+                      className="text-sm font-semibold text-gray-800 dark:text-white mb-2 mt-4 scroll-mt-20"
                       {...props}
                     >
                       {children}
