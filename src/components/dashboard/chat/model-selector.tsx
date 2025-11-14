@@ -57,25 +57,25 @@ export default function ModelSelector({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 px-3 py-1.5 dark:bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-lg transition-colors text-sm">
+        <button className="flex items-center gap-2 px-3 py-1.5 bg-card hover:bg-accent/10 border border-border rounded-lg transition-colors text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-gray-400 text-xs">
+            <span className="text-muted-foreground text-xs">
               {selectedModel.provider}
             </span>
-            <span className="text-white font-medium text-xs">
+            <span className="text-foreground font-medium text-xs">
               {selectedModel.name}
             </span>
           </div>
-          <ChevronDown className="w-3 h-3 text-gray-400" />
+          <ChevronDown className="w-3 h-3 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="bg-elevated border-gray-800"
+        className="bg-card border-border"
         align="end"
         sideOffset={8}
       >
-        <DropdownMenuLabel className="text-xs font-semibold text-gray-400">
+        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
           SELECT MODEL
         </DropdownMenuLabel>
 
@@ -86,8 +86,8 @@ export default function ModelSelector({
               onClick={() => onSelectModel(model)}
               className={`cursor-pointer ${
                 selectedModel.id === model.id
-                  ? " text-white focus:text-white"
-                  : "text-gray-300"
+                  ? "text-foreground focus:text-foreground"
+                  : "text-muted-foreground"
               }`}
             >
               <div className="flex items-start justify-between gap-2 w-full">
@@ -99,8 +99,8 @@ export default function ModelSelector({
                     <span
                       className={`text-xs px-1.5 py-0.5 rounded ${
                         selectedModel.id === model.id
-                          ? "bg-teal-700 text-teal-100"
-                          : "bg-gray-800 text-gray-400"
+                          ? "bg-accent text-accent-foreground"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {model.provider}
@@ -109,7 +109,7 @@ export default function ModelSelector({
                 </div>
 
                 {selectedModel.id === model.id && (
-                  <Check className="w-4 h-4 shrink-0" />
+                  <Check className="w-4 h-4 shrink-0 text-accent" />
                 )}
               </div>
             </DropdownMenuItem>
