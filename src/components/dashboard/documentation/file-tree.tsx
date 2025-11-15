@@ -92,8 +92,8 @@ export function FileTreeSidebar({
             }}
             className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm transition-colors rounded ${
               isSelected
-                ? "bg-gray-800 text-white"
-                : "text-gray-400 hover:bg-gray-900/50 hover:text-gray-300"
+                ? "bg-elevated dark:text-white"
+                : "text-gray-400 hover:bg-elevated/50 dark:hover:text-gray-300"
             }`}
             style={{ paddingLeft: `${level * 12 + 8}px` }}
           >
@@ -145,28 +145,28 @@ export function FileTreeSidebar({
       {/* Sidebar */}
       <div
         className={`
-        w-64 border-r border-gray-800 flex flex-col bg-background h-full
+        w-64 border-r border-border flex flex-col bg-background h-full
         lg:relative lg:translate-x-0
         ${isOpen ? "fixed inset-y-0 left-0 z-50 translate-x-0" : "hidden lg:flex"}
       `}
       >
         {/* Mobile close button */}
         {onClose && (
-          <div className="lg:hidden p-3 border-b border-gray-800 flex items-center justify-between">
+          <div className="lg:hidden p-3 border-b border-border flex items-center justify-between">
             <span className="text-sm font-semibold">Documentation</span>
-            <button onClick={onClose} className="p-1 hover:bg-gray-800 rounded">
+            <button onClick={onClose} className="p-1 hover:bg-elevated rounded">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        <div className="p-3 border-b border-gray-800">
+        <div className="p-3 border-b border-border">
           <div className="text-xs text-gray-500 mb-2">
             Last indexed: {lastIndexed}
           </div>
         </div>
 
-        <div className="p-2 border-b border-gray-800">
+        <div className="p-2 border-b border-border">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-500" />
             <input
@@ -174,7 +174,7 @@ export function FileTreeSidebar({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search..."
-              className="w-full bg-white dark:bg-gray-900 border border-gray-800 rounded pl-7 pr-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className="w-full bg-white dark:bg-gray-900 border border-border rounded pl-7 pr-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
             />
           </div>
         </div>

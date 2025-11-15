@@ -120,23 +120,23 @@ export function TableOfContentsSidebar({
       {/* Sidebar */}
       <div
         className={`
-        w-64 border-l border-gray-800 flex flex-col bg-background
+        w-64 border-l border-border flex flex-col bg-background
         xl:h-full
         ${isOpen ? "fixed right-0 top-0 h-screen z-50" : "hidden xl:flex"}
       `}
       >
         {/* Mobile close button */}
         {onClose && (
-          <div className="xl:hidden p-3 border-b border-gray-800 flex items-center justify-between shrink-0">
+          <div className="xl:hidden p-3 border-b border-border flex items-center justify-between shrink-0">
             <span className="text-sm font-semibold">Table of Contents</span>
-            <button onClick={onClose} className="p-1 hover:bg-gray-800 rounded">
+            <button onClick={onClose} className="p-1 hover:bg-border rounded">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {/* Header section */}
-        <div className="p-4 border-b border-gray-800 flex items-center justify-between shrink-0">
+        <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
           <button
             onClick={onRefreshClick}
             className="text-xs text-gray-400 hover:text-teal-400 flex items-center gap-1"

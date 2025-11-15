@@ -18,7 +18,7 @@ export function OrganizationButton({ organization }: OrganizationButtonProps) {
   return (
     <Button
       variant="outline"
-      className="bg-background h-auto min-h-21 justify-start p-4 w-full"
+      className="bg-background h-auto min-h-21 justify-start p-4 w-full hover:bg-elevated"
       onClick={() => router.push(`/dashboard/org/${organization.id}`)}
       onMouseEnter={() => prefetchOrgPage(organization.id)}
     >
