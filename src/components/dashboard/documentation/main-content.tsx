@@ -1,6 +1,13 @@
 import { ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Page {
   id: string;
@@ -29,12 +36,19 @@ export function MainContent({
 }: MainContentProps) {
   const internalRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = externalRef || internalRef;
+  const [selectedVersion, setSelectedVersion] = useState("v0");
 
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo(0, 0);
     }
   }, [selectedFile, scrollContainerRef]);
+
+  const handleVersionChange = (version: string) => {
+    setSelectedVersion(version);
+    // TODO: Fetch documentation for the selected version
+    console.log("Version changed to:", version);
+  };
 
   if (!selectedFile) {
     return (
@@ -56,7 +70,20 @@ export function MainContent({
   return (
     <div className="flex-1 flex flex-col">
       <div className="border-b border-grey-800 px-6 py-3 flex items-center justify-between">
-        <h1 className="text-xl font-bold">{selectedFile.title}</h1>
+        <div className="flex flex-row gap-5 items-center">
+          <h1 className="text-xl font-bold">{selectedFile.title}</h1>
+          <Select value={selectedVersion} onValueChange={handleVersionChange}>
+            <SelectTrigger className="w-17 h-8 text-sm font-semibold">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="v0">v0</SelectItem>
+              <SelectItem value="v1">v1</SelectItem>
+              <SelectItem value="v2">v2</SelectItem>
+              <SelectItem value="v3">v3</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <button className="text-xs h-8 px-4 border border-grey-700 rounded hover:bg-grey-800 transition-colors flex items-center gap-2">
           <span>Relevant source files</span>
           <ChevronRight className="w-3 h-3" />
