@@ -24,7 +24,7 @@ export function RepoButton({ repo }: RepoButtonProps) {
   return (
     <Button
       variant="outline"
-      className="bg-background h-auto min-h-21 justify-start p-4 w-full"
+      className="bg-background h-auto min-h-21 justify-start p-4 w-full hover:bg-elevated"
       onClick={() => router.push(`/dashboard/repo/${repo.id}`)}
       onMouseEnter={handlePrefetch}
     >
@@ -42,8 +42,13 @@ export function RepoButton({ repo }: RepoButtonProps) {
         <div className="flex flex-col justify-start items-start min-w-0 flex-1">
           <span className="font-semibold truncate">{repo.name}</span>
           <span className="text-muted-foreground text-xs whitespace-nowrap">
-            {type} <span className="text-md">&middot;</span>{" "}
-            {index_status || "not indexed"}
+            {type === "github"
+              ? "GitHub"
+              : type === "gitlab"
+                ? "GitLab"
+                : "Local"}{" "}
+            <span className="text-md">&middot;</span>{" "}
+            {index_status || "Not Indexed"}
           </span>
         </div>
       </div>
