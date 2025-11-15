@@ -24,7 +24,7 @@ export function OrganizationButton({ organization }: OrganizationButtonProps) {
     >
       <div className="flex flex-row gap-4 text-sm w-full overflow-hidden">
         {/* Surround in a circular container */}
-        <div className="rounded-full bg-black p-2.5 flex-shrink-0">
+        <div className="rounded-full dark:bg-black border-2 border-primary p-2.5 shrink-0">
           <Building2 className="text-primary-foreground" />
         </div>
         <div className="flex flex-col justify-start items-start min-w-0 flex-1">

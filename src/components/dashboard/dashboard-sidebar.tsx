@@ -7,7 +7,8 @@ import {
   Building2,
   Users,
   Settings,
-  ArrowLeftRight,
+  BookOpen,
+  MessageSquare,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -67,7 +68,13 @@ export function DashboardSidebar() {
         return (
           <>
             <SidebarItem
-              icon={<ArrowLeftRight className="h-5 w-5" />}
+              icon={
+                chatExpanded ? (
+                  <BookOpen className="h-5 w-5" />
+                ) : (
+                  <MessageSquare className="h-5 w-5" />
+                )
+              }
               label={chatExpanded ? "Documentation" : "Chat"}
               action={() => toggle()}
             />
