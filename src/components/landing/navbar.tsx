@@ -12,10 +12,10 @@ import {
 
 export default function Navbar() {
   return (
-    <div className="container mx-auto px-4 border-b border-border bg-background">
+    <div className="container mx-auto border-b border-border">
       <div className="flex h-16 items-center justify-between">
         {/* Logo */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/codecompass.png"
