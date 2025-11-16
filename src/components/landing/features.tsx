@@ -130,6 +130,7 @@ export default function Features() {
                 muted
                 playsInline
                 preload="metadata"
+                loop
                 src={videoUrl}
               >
                 Your browser does not support the video tag.
