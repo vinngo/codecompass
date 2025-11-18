@@ -45,7 +45,7 @@ export default async function RepoPage({
       />
       {/* Documentation Viewer - Main content */}
       <div className="flex-1 overflow-hidden">
-        <DocumentationViewer />
+        <DocumentationViewer repoId={repo.id} />
       </div>
 
       {/* Chat Bubble - Floating input (shows when chat is minimized) */}

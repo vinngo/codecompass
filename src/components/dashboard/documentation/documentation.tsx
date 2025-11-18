@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/dialog";
 import { Empty } from "@/components/ui/empty";
 import { useChatUIStore } from "@/lib/stores/useChatUIStore";
+import { indexRepository } from "@/lib/services/repoService";
 
-export default function DocumentationViewer() {
+export default function DocumentationViewer({ repoId }: { repoId: string }) {
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<Page | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
@@ -28,9 +29,11 @@ export default function DocumentationViewer() {
   const [lastIndexed, setLastIndexed] = useState<string>("");
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [showRefreshModal, setShowRefreshModal] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [isFileTreeOpen, setIsFileTreeOpen] = useState(false);
   const [isTocOpen, setIsTocOpen] = useState(false);
   const [error, setError] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const mainContentScrollRef = useRef<HTMLDivElement>(null);
   const setHasDocumentation = useChatUIStore(
     (state) => state.setHasDocumentation,
@@ -54,6 +57,7 @@ export default function DocumentationViewer() {
 
       // Mock data information from deepwiki vs code architecture
 
+      /*
       const mockPages: Page[] = [
         {
           id: "1",
@@ -184,6 +188,8 @@ The initialization sequence defines the startup order of all components.`,
           version: 1,
         },
       ];
+      */
+      const mockPages: Page[] = [];
 
       const tree = buildFileTree(mockPages);
       setFileTree(tree);
@@ -227,6 +233,28 @@ The initialization sequence defines the startup order of all components.`,
     }
   };
 
+  const handleGenerate = async () => {
+    try {
+      setError("");
+      setIsGenerating(true);
+
+      const result = await indexRepository(repoId);
+
+      if (!result.success) {
+        setError(result.error);
+        setIsGenerating(false);
+        return;
+      }
+
+      setShowGenerateModal(false);
+      // Optionally refetch documentation after indexing starts
+      await fetchDocumentation();
+    } catch (e) {
+      setError("Could not generate documentation: " + e);
+      setIsGenerating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -237,17 +265,54 @@ The initialization sequence defines the startup order of all components.`,
 
   if (fileTree.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center bg-background">
-        <Empty
-          title="No documentation available"
-          description="Index your codebase to gain documentation and AI insights."
-          icon={<FileText className="h-8 w-8" />}
-        >
-          <Button onClick={() => setShowRefreshModal(true)}>
-            Generate Documentation
-          </Button>
-        </Empty>
-      </div>
+      <>
+        <div className="flex h-full items-center justify-center bg-background">
+          <Empty
+            title="No documentation available"
+            description="Index your codebase to gain documentation and AI insights."
+            icon={<FileText className="h-8 w-8" />}
+          >
+            <Button onClick={() => setShowGenerateModal(true)}>
+              Generate Documentation
+            </Button>
+          </Empty>
+        </div>
+
+        <Dialog open={showGenerateModal} onOpenChange={setShowGenerateModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Generate Documentation</DialogTitle>
+              <DialogDescription>
+                This will index your codebase and generate comprehensive
+                documentation. This process may take a while depending on the
+                size of your repository.
+              </DialogDescription>
+            </DialogHeader>
+            {error && (
+              <div className="w-full p-3 bg-destructive/10 text-destructive text-sm rounded-md text-center">
+                {error}
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowGenerateModal(false)}
+                className="w-full sm:w-auto"
+                disabled={isGenerating}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="w-full sm:w-auto"
+                onClick={handleGenerate}
+                disabled={isGenerating}
+              >
+                {isGenerating ? "Generating..." : "Generate"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
