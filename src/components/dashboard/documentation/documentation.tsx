@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/dialog";
 import { Empty } from "@/components/ui/empty";
 import { useChatUIStore } from "@/lib/stores/useChatUIStore";
+import { indexRepository } from "@/lib/services/repoService";
 
-export default function DocumentationViewer() {
+export default function DocumentationViewer({ repoId }: { repoId: string }) {
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<Page | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
@@ -32,6 +33,7 @@ export default function DocumentationViewer() {
   const [isFileTreeOpen, setIsFileTreeOpen] = useState(false);
   const [isTocOpen, setIsTocOpen] = useState(false);
   const [error, setError] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const mainContentScrollRef = useRef<HTMLDivElement>(null);
   const setHasDocumentation = useChatUIStore(
     (state) => state.setHasDocumentation,
@@ -231,17 +233,25 @@ The initialization sequence defines the startup order of all components.`,
     }
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     try {
       setError("");
-      /*
-        server action: call the backend to index the codebase for the first time
-        and update status in postgres
-      */
+      setIsGenerating(true);
+
+      const result = await indexRepository(repoId);
+
+      if (!result.success) {
+        setError(result.error);
+        setIsGenerating(false);
+        return;
+      }
 
       setShowGenerateModal(false);
+      // Optionally refetch documentation after indexing starts
+      await fetchDocumentation();
     } catch (e) {
-      setError("could not generate documentation:" + e);
+      setError("Could not generate documentation: " + e);
+      setIsGenerating(false);
     }
   };
 
@@ -288,11 +298,16 @@ The initialization sequence defines the startup order of all components.`,
                 variant="outline"
                 onClick={() => setShowGenerateModal(false)}
                 className="w-full sm:w-auto"
+                disabled={isGenerating}
               >
                 Cancel
               </Button>
-              <Button className="w-full sm:w-auto" onClick={handleGenerate}>
-                Generate
+              <Button
+                className="w-full sm:w-auto"
+                onClick={handleGenerate}
+                disabled={isGenerating}
+              >
+                {isGenerating ? "Generating..." : "Generate"}
               </Button>
             </DialogFooter>
           </DialogContent>
