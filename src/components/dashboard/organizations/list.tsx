@@ -33,7 +33,7 @@ export function OrganizationList() {
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex flex-col justify-center items-center scale-150 mt-80">
+      <div className="flex flex-col justify-center items-center">
         <Empty
           title="You Have No Organizations"
           description="Create or join an organization to get started"
