@@ -19,6 +19,7 @@ export function DashboardSidebar() {
   const pathname = usePathname();
   const params = useParams();
   const router = useRouter();
+  const { hasDocumentation } = useChatUIStore();
 
   const { toggle, isExpanded: chatExpanded } = useChatUIStore();
 
@@ -97,6 +98,7 @@ export function DashboardSidebar() {
                 }
                 toggle();
               }}
+              disabled={!hasDocumentation}
             />
 
             {chatExpanded && <ConversationPanel />}

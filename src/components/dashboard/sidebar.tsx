@@ -9,7 +9,6 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
-import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 
 // Context to share sidebar state with SidebarItems
 const SidebarContext = createContext<{ isExpanded: boolean }>({
@@ -46,19 +45,31 @@ export function SidebarItem({
   icon,
   label,
   action,
+  disabled = false,
 }: {
   icon: React.ReactNode;
   label: string;
   action?: () => void;
+  disabled?: boolean;
 }) {
   const { isExpanded } = useSidebar();
+
+  const handleClick = () => {
+    if (!disabled && action) {
+      action();
+    }
+  };
 
   return (
     <motion.div
       layout
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      onClick={action}
-      className="flex items-center gap-3 px-3 py-2 hover:bg-muted rounded-md cursor-pointer transition-colors w-full"
+      onClick={handleClick}
+      className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors w-full ${
+        disabled
+          ? "opacity-50 cursor-not-allowed"
+          : "hover:bg-muted cursor-pointer"
+      }`}
     >
       <div className="shrink-0 w-6 h-6 flex items-center justify-center">
         {icon}
