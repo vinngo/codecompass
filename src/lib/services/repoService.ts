@@ -240,7 +240,9 @@ export async function updateRepoSettings(
   return { success: true, data: repo as Repo };
 }
 
-export async function deleteRepo(repoId: string): Promise<ActionResult<void>> {
+export async function deleteRepo(
+  repoId: string,
+): Promise<ActionResult<{ organizationId: string }>> {
   const client = await createClient();
 
   const {
@@ -251,6 +253,22 @@ export async function deleteRepo(repoId: string): Promise<ActionResult<void>> {
     return { success: false, error: "User not authenticated!" };
   }
 
+  // Fetch the organization_id before deleting
+  const { data: repo, error: repoError } = await client
+    .from("repositories")
+    .select("organization_id")
+    .eq("id", repoId)
+    .single();
+
+  if (repoError) {
+    console.error(repoError);
+    return { success: false, error: repoError.message };
+  }
+
+  if (!repo) {
+    return { success: false, error: "Repository not found" };
+  }
+
   const { error } = await client.from("repositories").delete().eq("id", repoId);
 
   if (error) {
@@ -258,7 +276,7 @@ export async function deleteRepo(repoId: string): Promise<ActionResult<void>> {
     return { success: false, error: error.message };
   }
 
-  return { success: true, data: undefined };
+  return { success: true, data: { organizationId: repo.organization_id } };
 }
 
 export async function triggerReindex(
