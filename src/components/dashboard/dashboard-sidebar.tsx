@@ -83,7 +83,13 @@ export function DashboardSidebar() {
             <SidebarItem
               icon={<ArrowLeftRight className="h-5 w-5" />}
               label={chatExpanded ? "Documentation" : "Chat"}
-              action={() => toggle()}
+              action={() => {
+                // Navigate to repo page if not already there
+                if (pathname !== `/dashboard/repo/${currentContext.id}`) {
+                  router.push(`/dashboard/repo/${currentContext.id}`);
+                }
+                toggle();
+              }}
             />
 
             {chatExpanded && <ConversationPanel />}
