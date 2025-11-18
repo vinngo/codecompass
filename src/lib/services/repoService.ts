@@ -680,3 +680,39 @@ export async function createMessage(
 
   return { success: true, data: message as ConversationMessage };
 }
+
+export async function indexRepository(
+  repoId: string,
+): Promise<ActionResult<void>> {
+  const client = await createClient();
+
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated!" };
+  }
+
+  //TO-DO: CALL THE BACKEND TO START INDEXING
+
+  //replace hardcoded value with result from calling the backend
+  const success = false;
+
+  if (!success) {
+    return { success: false, error: "Indexing failed!" };
+  }
+
+  //mark the repository as indexing in supabase
+  const { error } = await client
+    .from("repositories")
+    .update({ index_status: "indexing" })
+    .eq("id", repoId);
+
+  if (error) {
+    console.error(error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: undefined };
+}
