@@ -12,10 +12,10 @@ import {
 
 export default function Navbar() {
   return (
-    <div className="container mx-auto px-4 border-b border-border bg-background">
+    <div className="container mx-auto border-b border-border">
       <div className="flex h-16 items-center justify-between">
         {/* Logo */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/codecompass.png"
@@ -35,32 +35,26 @@ export default function Navbar() {
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link
-                    href="/"
+                  <button
+                    onClick={() => {
+                      document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
                     className="inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus:text-foreground focus:outline-none"
                   >
                     Features
-                  </Link>
+                  </button>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link
-                    href="/"
-                    className="inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus:text-foreground focus:outline-none"
-                  >
-                    Integrations
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/"
+                  <button
+                    onClick={() => {
+                      document.getElementById('comparison')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
                     className="inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus:text-foreground focus:outline-none"
                   >
                     Compare
-                  </Link>
+                  </button>
                 </NavigationMenuLink>
               </NavigationMenuItem>
             </NavigationMenuList>

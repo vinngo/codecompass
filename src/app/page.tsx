@@ -17,9 +17,9 @@ export default async function Home() {
 
   // Show landing page for unauthenticated users
   return (
-    <>
+    <div className=" dark:bg-gray-900">
       <Navbar />
       <LandingPage />
-    </>
+    </div>
   );
 }
