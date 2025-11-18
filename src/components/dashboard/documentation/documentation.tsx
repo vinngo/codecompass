@@ -28,6 +28,7 @@ export default function DocumentationViewer() {
   const [lastIndexed, setLastIndexed] = useState<string>("");
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [showRefreshModal, setShowRefreshModal] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [isFileTreeOpen, setIsFileTreeOpen] = useState(false);
   const [isTocOpen, setIsTocOpen] = useState(false);
   const [error, setError] = useState("");
@@ -54,6 +55,7 @@ export default function DocumentationViewer() {
 
       // Mock data information from deepwiki vs code architecture
 
+      /*
       const mockPages: Page[] = [
         {
           id: "1",
@@ -184,6 +186,8 @@ The initialization sequence defines the startup order of all components.`,
           version: 1,
         },
       ];
+      */
+      const mockPages: Page[] = [];
 
       const tree = buildFileTree(mockPages);
       setFileTree(tree);
@@ -227,6 +231,20 @@ The initialization sequence defines the startup order of all components.`,
     }
   };
 
+  const handleGenerate = () => {
+    try {
+      setError("");
+      /*
+        server action: call the backend to index the codebase for the first time
+        and update status in postgres
+      */
+
+      setShowGenerateModal(false);
+    } catch (e) {
+      setError("could not generate documentation:" + e);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -237,17 +255,49 @@ The initialization sequence defines the startup order of all components.`,
 
   if (fileTree.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center bg-background">
-        <Empty
-          title="No documentation available"
-          description="Index your codebase to gain documentation and AI insights."
-          icon={<FileText className="h-8 w-8" />}
-        >
-          <Button onClick={() => setShowRefreshModal(true)}>
-            Generate Documentation
-          </Button>
-        </Empty>
-      </div>
+      <>
+        <div className="flex h-full items-center justify-center bg-background">
+          <Empty
+            title="No documentation available"
+            description="Index your codebase to gain documentation and AI insights."
+            icon={<FileText className="h-8 w-8" />}
+          >
+            <Button onClick={() => setShowGenerateModal(true)}>
+              Generate Documentation
+            </Button>
+          </Empty>
+        </div>
+
+        <Dialog open={showGenerateModal} onOpenChange={setShowGenerateModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Generate Documentation</DialogTitle>
+              <DialogDescription>
+                This will index your codebase and generate comprehensive
+                documentation. This process may take a while depending on the
+                size of your repository.
+              </DialogDescription>
+            </DialogHeader>
+            {error && (
+              <div className="w-full p-3 bg-destructive/10 text-destructive text-sm rounded-md text-center">
+                {error}
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowGenerateModal(false)}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button className="w-full sm:w-auto" onClick={handleGenerate}>
+                Generate
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
