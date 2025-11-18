@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Menu, List } from "lucide-react";
+import { Menu, List, FileText } from "lucide-react";
 import { FileTreeSidebar } from "./file-tree";
 import { MainContent } from "./main-content";
 import { TableOfContentsSidebar } from "./table-of-contents";
@@ -16,6 +16,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Empty } from "@/components/ui/empty";
+import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 
 export default function DocumentationViewer() {
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
@@ -30,6 +32,9 @@ export default function DocumentationViewer() {
   const [isTocOpen, setIsTocOpen] = useState(false);
   const [error, setError] = useState("");
   const mainContentScrollRef = useRef<HTMLDivElement>(null);
+  const setHasDocumentation = useChatUIStore(
+    (state) => state.setHasDocumentation,
+  );
 
   /*This is a React anti-pattern. Replace with tanstack query later*/
   useEffect(() => {
@@ -48,6 +53,7 @@ export default function DocumentationViewer() {
       setIsLoading(true);
 
       // Mock data information from deepwiki vs code architecture
+
       const mockPages: Page[] = [
         {
           id: "1",
@@ -185,8 +191,12 @@ The initialization sequence defines the startup order of all components.`,
 
       setExpandedNodes(new Set(["1", "4"]));
       setSelectedFile(mockPages[0]);
+
+      // Update chat UI store with documentation availability
+      setHasDocumentation(mockPages.length > 0);
     } catch (error) {
       console.error("Error fetching documentation:", error);
+      setHasDocumentation(false);
     } finally {
       setIsLoading(false);
     }
@@ -221,6 +231,22 @@ The initialization sequence defines the startup order of all components.`,
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-gray-400">Loading documentation...</div>
+      </div>
+    );
+  }
+
+  if (fileTree.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center bg-background">
+        <Empty
+          title="No documentation available"
+          description="Index your codebase to gain documentation and AI insights."
+          icon={<FileText className="h-8 w-8" />}
+        >
+          <Button onClick={() => setShowRefreshModal(true)}>
+            Generate Documentation
+          </Button>
+        </Empty>
       </div>
     );
   }

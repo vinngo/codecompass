@@ -8,6 +8,7 @@ export default function ChatBubble() {
   const [inputValue, setInputValue] = useState("");
   const expand = useChatUIStore((state) => state.expand);
   const isExpanded = useChatUIStore((state) => state.isExpanded);
+  const hasDocumentation = useChatUIStore((state) => state.hasDocumentation);
 
   const handleSend = () => {
     if (inputValue.trim()) {
@@ -24,7 +25,8 @@ export default function ChatBubble() {
     }
   };
 
-  if (isExpanded) {
+  // Hide chat bubble if documentation doesn't exist or chat is expanded
+  if (isExpanded || !hasDocumentation) {
     return null;
   }
 
