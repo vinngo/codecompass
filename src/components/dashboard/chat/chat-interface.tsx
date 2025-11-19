@@ -99,14 +99,12 @@ export default function ChatInterface() {
         throw new Error("No response body");
       }
 
-      // Handle the streaming response with client-side transformation
+      // Handle the streaming response
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulatedText = "";
+      let buffer = ""; // Buffer for incomplete SSE messages
       const assistantMessageId = Date.now();
-
-      // Create initial assistant message (but don't show it yet)
-      const assistantMessageCreated = false;
       let firstContentReceived = false;
 
       // Read the stream
@@ -117,87 +115,78 @@ export default function ChatInterface() {
           break;
         }
 
-        // Handle backend's complex format: numeric-keyed JSON objects
-        const rawText = decoder.decode(value, { stream: true });
+        // Decode the chunk and add to buffer
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
 
-        // Multiple JSON objects may be concatenated, split them
-        const jsonObjects = rawText.split(/(?<=\})(?=\{)/);
+        // Process complete SSE messages (ending with \n\n)
+        const messages = buffer.split("\n\n");
 
-        for (const jsonStr of jsonObjects) {
-          try {
-            const parsed = JSON.parse(jsonStr);
+        // Keep the last incomplete message in the buffer
+        buffer = messages.pop() || "";
 
-            // Backend sends objects with numeric keys representing byte arrays
-            if (
-              typeof parsed === "object" &&
-              parsed !== null &&
-              "0" in parsed
-            ) {
-              // Convert numeric keys to Uint8Array and decode
-              const bytes = new Uint8Array(Object.values(parsed) as number[]);
-              const actualText = decoder.decode(bytes);
+        for (const message of messages) {
+          if (!message.trim()) continue;
 
-              // Backend sends SSE format: "data: {...}\n\n"
-              if (actualText.startsWith("data: ")) {
-                try {
-                  const sseJsonStr = actualText.slice(6).trim(); // Remove "data: " prefix
-                  const dataObj = JSON.parse(sseJsonStr);
+          // Parse SSE format: "data: {...}"
+          if (message.startsWith("data: ")) {
+            const dataStr = message.slice(6).trim();
 
-                  // Extract delta from nested structure: {"content": {"delta": "..."}}
-                  if (
-                    dataObj.content &&
-                    dataObj.content.delta &&
-                    typeof dataObj.content.delta === "string"
-                  ) {
-                    accumulatedText += dataObj.content.delta;
+            // Check for stream end
+            if (dataStr === "[DONE]") {
+              console.log("Received [DONE] signal");
+              continue;
+            }
 
-                    // On first content, hide loading and create assistant message
-                    if (!firstContentReceived) {
-                      firstContentReceived = true;
-                      setResponseLoading(false);
+            try {
+              const dataObj = JSON.parse(dataStr);
 
-                      setConversationTurns((prevTurns) =>
-                        prevTurns.map((turn) =>
-                          turn.id === turnId
-                            ? {
-                                ...turn,
-                                loading: false,
-                              }
-                            : turn,
-                        ),
-                      );
+              // Extract content from {"content": "..."} format
+              if (dataObj.content && typeof dataObj.content === "string") {
+                accumulatedText += dataObj.content;
 
-                      setMessages((prevMessages) => [
-                        ...prevMessages,
-                        {
-                          id: assistantMessageId,
-                          text: accumulatedText,
-                          sender: "assistant",
-                          timestamp: new Date().toLocaleTimeString("en-US", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }),
-                        },
-                      ]);
-                    } else {
-                      // Update the assistant message with accumulated text
-                      setMessages((prevMessages) =>
-                        prevMessages.map((msg) =>
-                          msg.id === assistantMessageId
-                            ? { ...msg, text: accumulatedText }
-                            : msg,
-                        ),
-                      );
-                    }
-                  }
-                } catch (e) {
-                  // Ignore parse errors for non-delta chunks
-                  console.warn("Failed to parse SSE data:", actualText);
+                // On first content, hide loading and create assistant message
+                if (!firstContentReceived) {
+                  firstContentReceived = true;
+                  setResponseLoading(false);
+
+                  setConversationTurns((prevTurns) =>
+                    prevTurns.map((turn) =>
+                      turn.id === turnId
+                        ? {
+                            ...turn,
+                            loading: false,
+                          }
+                        : turn,
+                    ),
+                  );
+
+                  setMessages((prevMessages) => [
+                    ...prevMessages,
+                    {
+                      id: assistantMessageId,
+                      text: accumulatedText,
+                      sender: "assistant",
+                      timestamp: new Date().toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }),
+                    },
+                  ]);
+                } else {
+                  // Update the assistant message with accumulated text
+                  setMessages((prevMessages) =>
+                    prevMessages.map((msg) =>
+                      msg.id === assistantMessageId
+                        ? { ...msg, text: accumulatedText }
+                        : msg,
+                    ),
+                  );
                 }
               }
+            } catch (e) {
+              console.warn("Failed to parse SSE data:", dataStr, e);
             }
-          } catch (e) {
-            // Ignore parse errors - may be incomplete JSON at chunk boundary
           }
         }
       }
