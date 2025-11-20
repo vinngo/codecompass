@@ -57,7 +57,7 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
 
       // Mock data information from deepwiki vs code architecture
 
-      const mockPages: Page[] = [
+      /*const mockPages: Page[] = [
         {
           id: "1",
           documentation_id: "doc-1",
@@ -187,8 +187,9 @@ The initialization sequence defines the startup order of all components.`,
           version: 1,
         },
       ];
+      */
 
-      //const mockPages: Page[] = [];
+      const mockPages: Page[] = [];
 
       const tree = buildFileTree(mockPages);
       setFileTree(tree);
