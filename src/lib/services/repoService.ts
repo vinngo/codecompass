@@ -713,7 +713,33 @@ export async function indexRepository(
     return { success: false, error: "User not authenticated!" };
   }
 
+  const { data: installation, error: installationError } = await client
+    .from("github_installations")
+    .select("*")
+    .eq("installed_by", user.id)
+    .single();
+
+  if (!installation || installationError) {
+    return { success: false, error: "Github App Installation not found!" };
+  }
+
+  //fetch repo
+
+  const repoResult = await getRepoWithStatus(repoId);
+
+  if (!repoResult.success) {
+    return { success: false, error: repoResult.error };
+  }
+
+  const repoUrl = repoResult.data.repo_url;
+  const installationId = installation.installation_id;
+
   //TO-DO: CALL THE BACKEND TO START INDEXING
+
+  //body: {
+  //  repoUrl: ,
+  //  installationId: installation.id,
+  //}
 
   //replace hardcoded value with result from calling the backend
   const success = false;
