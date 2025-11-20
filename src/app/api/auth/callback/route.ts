@@ -16,9 +16,6 @@ export async function GET(request: Request) {
       const provider = data.session.user.app_metadata.provider;
       const providerToken = data.session.provider_token;
 
-      console.log(provider);
-      console.log(providerToken);
-
       if (
         provider &&
         providerToken &&

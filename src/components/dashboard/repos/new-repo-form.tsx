@@ -50,19 +50,8 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
   const [authType, setAuthType] = useState<string | null>(null);
 
   const handleGithubAuth = () => {
-    const width = 600;
-    const height = 700;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-
-    const redirectUrl = `${window.location.origin}/api/github/installation?org_id=${orgId}`;
-    const githubUrl = `https://github.com/apps/codecompass-app/installations/new?state=${encodeURIComponent(redirectUrl)}`;
-
-    window.open(
-      githubUrl,
-      "github-auth",
-      `width=${width},height=${height},left=${left},top=${top},popup=yes`,
-    );
+    // Redirect to installation page
+    router.push(`/dashboard/install-github-app?org_id=${orgId}`);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
