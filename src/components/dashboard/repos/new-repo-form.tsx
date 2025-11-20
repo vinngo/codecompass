@@ -46,13 +46,6 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
-  const [needsAuth, setNeedsAuth] = useState<boolean>(false);
-  const [authType, setAuthType] = useState<string | null>(null);
-
-  const handleGithubAuth = () => {
-    // Redirect to installation page
-    router.push(`/dashboard/install-github-app?org_id=${orgId}`);
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -92,9 +85,8 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
             return;
           }
           if (result.error === "Installation Needed") {
-            setNeedsAuth(true);
-            setAuthType("github");
-            setIsLoading(false);
+            // Automatically redirect to GitHub App installation page
+            router.push(`/dashboard/install-github-app?org_id=${orgId}`);
             return;
           }
           setError(result.error);
@@ -189,27 +181,6 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
                     Enter the URL of the Github repository.
                   </FieldDescription>
                 </Field>
-                {needsAuth && (
-                  <div className="flex flex-col gap-3">
-                    <Separator />
-                    {authType === "github" ? (
-                      <FieldLabel>Add Github Authentication</FieldLabel>
-                    ) : (
-                      <FieldLabel>Add Authentication</FieldLabel>
-                    )}
-                    {authType === "github" && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="w-fit"
-                        onClick={handleGithubAuth}
-                      >
-                        <Github />
-                        Add GitHub Account or Organization
-                      </Button>
-                    )}
-                  </div>
-                )}
               </div>
             )}
             {type === "local" && (
@@ -242,11 +213,7 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
         <Separator />
 
         <div className="flex gap-3">
-          <Button
-            type="submit"
-            size="sm"
-            disabled={isLoading || !name.trim() || needsAuth}
-          >
+          <Button type="submit" size="sm" disabled={isLoading || !name.trim()}>
             {isLoading ? "Creating..." : "Create Repository"}
           </Button>
           <Button

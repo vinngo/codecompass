@@ -13,7 +13,7 @@ export default async function InstallGithubAppPage({
   const { org_id } = await searchParams;
 
   const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/github/installation${org_id ? `?org_id=${org_id}` : ""}`;
-  const githubInstallUrl = `https://github.com/apps/APP-NAME/installations/new?state=${encodeURIComponent(redirectUrl)}`;
+  const githubInstallUrl = `https://github.com/apps/codecompass-app/installations/new?state=${encodeURIComponent(redirectUrl)}`;
 
   return (
     <div className="container mx-auto py-16 px-4 max-w-2xl">
@@ -49,13 +49,14 @@ export default async function InstallGithubAppPage({
                 </a>
               </Button>
 
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="w-full"
-              >
-                <Link href={org_id ? `/dashboard/new/${org_id}` : "/dashboard/organizations"}>
+              <Button asChild variant="outline" size="lg" className="w-full">
+                <Link
+                  href={
+                    org_id
+                      ? `/dashboard/new/${org_id}`
+                      : "/dashboard/organizations"
+                  }
+                >
                   Cancel
                 </Link>
               </Button>
