@@ -28,7 +28,9 @@ export default async function InstallGithubAppPage({
             <p className="text-muted-foreground">
               To import repositories from GitHub, you need to install the
               CodeCompass GitHub App. This will allow us to access your
-              repositories and generate documentation.
+              repositories and generate documentation. (Hint: Select &apos;All
+              Repositories&apos; when installing to avoid having to grant access
+              to one repository at a time.)
             </p>
           </div>
 
