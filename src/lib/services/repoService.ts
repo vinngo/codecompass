@@ -9,7 +9,33 @@ import {
   ConversationMessage,
 } from "@/app/types/supabase";
 import { ActionResult } from "@/app/types/action";
-import { validateRepoUrl } from "./gitProviderService";
+import { verifyGithubRepoAccess } from "./gitProviderService";
+
+// Helper function to parse GitHub URLs
+function parseGitHubUrl(url: string): { owner: string; repo: string } {
+  try {
+    // Handle multiple formats:
+    // - https://github.com/owner/repo
+    // - https://github.com/owner/repo.git
+    // - git@github.com:owner/repo.git
+
+    url = url.trim().replace(/\.git$/, "");
+
+    if (url.includes("github.com/")) {
+      const parts = url.split("github.com/")[1].split("/");
+      return { owner: parts[0], repo: parts[1] };
+    }
+
+    if (url.startsWith("git@github.com:")) {
+      const parts = url.replace("git@github.com:", "").split("/");
+      return { owner: parts[0], repo: parts[1] };
+    }
+
+    return { owner: "", repo: "" };
+  } catch (error) {
+    return { owner: "", repo: "" };
+  }
+}
 
 export async function getReposByOrganizationId(
   organizationId: string,
@@ -68,6 +94,22 @@ export async function createRepoViaGithub(
     return {
       success: false,
       error: "Installation Needed",
+    };
+  }
+
+  //parse url for owner and repo
+  const { owner, repo: repoName } = parseGitHubUrl(url);
+
+  const hasAccess = await verifyGithubRepoAccess(
+    installation.id,
+    owner,
+    repoName,
+  );
+
+  if (!hasAccess) {
+    return {
+      success: false,
+      error: "Access Denied",
     };
   }
 
