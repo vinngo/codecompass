@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Menu, List, FileText } from "lucide-react";
+import { Menu, List, FileText, Loader2 } from "lucide-react";
 import { FileTreeSidebar } from "./file-tree";
 import { MainContent } from "./main-content";
 import { TableOfContentsSidebar } from "./table-of-contents";
@@ -19,6 +19,7 @@ import {
 import { Empty } from "@/components/ui/empty";
 import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 import { indexRepository } from "@/lib/services/repoService";
+import { motion } from "framer-motion";
 
 export default function DocumentationViewer({ repoId }: { repoId: string }) {
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
@@ -54,140 +55,6 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
   const fetchDocumentation = async () => {
     try {
       setIsLoading(true);
-
-      // Mock data information from deepwiki vs code architecture
-
-      /*const mockPages: Page[] = [
-        {
-          id: "1",
-          documentation_id: "doc-1",
-          title: "VS Code Architecture Overview",
-          slug: "vs-code-architecture-overview",
-          content: `# VS Code Architecture Overview
-
-## Purpose and Scope
-
-This document provides a high-level overview of VS Code architecture, focusing on the multi-process design, core systems, and how major components interact. It explains the separation between the main process, renderer process, extension host, and specialized processes, as well as the foundational services and dependency injection patterns used throughout the codebase.
-
-For detailed information about specific subsystems:
-
-- Application startup and initialization: see Application Startup and Process Architecture
-- Build system details: see Build System and Package Management
-- Native module compilation: see Native Module Compilation and Platform Support
-- Extension architecture: see Extension System
-- Workbench UI framework: see Workbench and UI Framework
-- Monaco editor integration: see Monaco Editor Integration
-
-## Multi-Process Architecture
-
-VS Code runs as a multi-process Electron application with clear separation of concerns for security, stability, and extensibility.
-
-### Process Responsibilities
-
-Each process has specific responsibilities and boundaries to maintain security and stability.
-
-### Core Workbench Architecture
-
-The workbench is the main UI shell that hosts the editor and all UI components.
-
-## Extension System Architecture
-
-Extensions run in a separate process for security and stability.
-
-### Extension API Surface
-
-The extension API is designed to be stable and backwards compatible.
-
-### Type Converters
-
-Type converters handle the translation between internal and external types.
-
-### Service Dependency Injection
-
-Services are registered and injected throughout the codebase using dependency injection.
-
-### Core Service Interfaces
-
-Core services provide fundamental functionality to all parts of the application.
-
-### Editor and Monaco Integration
-
-The Monaco editor is integrated into the workbench as the core text editing component.
-
-### Editor Configuration
-
-Editor configuration is managed through a centralized service.
-
-## Build System and Packaging
-
-The build system handles TypeScript compilation, native modules, and packaging.
-
-### Key Build Artifacts
-
-Build artifacts include the packaged application and extension marketplace packages.
-
-### Initialization Sequence
-
-The initialization sequence defines the startup order of all components.`,
-          order_index: 1,
-          parent_page_id: null,
-          referenced_files: [
-            "src/vs/code/electron-main/main.ts",
-            "src/vs/workbench/workbench.ts",
-          ],
-          referenced_symbols: null,
-          metadata: null,
-          created_at: "2025-10-19T00:00:00Z",
-          updated_at: "2025-10-19T00:00:00Z",
-          version: 1,
-        },
-        {
-          id: "2",
-          documentation_id: "doc-1",
-          title: "Application Startup and Process Architecture",
-          slug: "application-startup",
-          content: `# Application Startup and Process Architecture\n\nDetailed information about how VS Code starts up and initializes its processes.`,
-          order_index: 1,
-          parent_page_id: "1",
-          referenced_files: null,
-          referenced_symbols: null,
-          metadata: null,
-          created_at: "2025-10-19T00:00:00Z",
-          updated_at: "2025-10-19T00:00:00Z",
-          version: 1,
-        },
-        {
-          id: "3",
-          documentation_id: "doc-1",
-          title: "Build System and Package Management",
-          slug: "build-system",
-          content: `# Build System and Package Management\n\nInformation about the build system.`,
-          order_index: 2,
-          parent_page_id: "1",
-          referenced_files: null,
-          referenced_symbols: null,
-          metadata: null,
-          created_at: "2025-10-19T00:00:00Z",
-          updated_at: "2025-10-19T00:00:00Z",
-          version: 1,
-        },
-        {
-          id: "4",
-          documentation_id: "doc-1",
-          title: "Extension System",
-          slug: "extension-system",
-          content: `# Extension System\n\nHow extensions work in VS Code.`,
-          order_index: 2,
-          parent_page_id: null,
-          referenced_files: null,
-          referenced_symbols: null,
-          metadata: null,
-          created_at: "2025-10-19T00:00:00Z",
-          updated_at: "2025-10-19T00:00:00Z",
-          version: 1,
-        },
-      ];
-      */
 
       const mockPages: Page[] = [];
 
@@ -247,6 +114,7 @@ The initialization sequence defines the startup order of all components.`,
       }
 
       setShowGenerateModal(false);
+      setIsGenerating(false);
       // Optionally refetch documentation after indexing starts
       await fetchDocumentation();
     } catch (e) {
@@ -269,11 +137,11 @@ The initialization sequence defines the startup order of all components.`,
         <div className="flex h-full items-center justify-center bg-background">
           <Empty
             title="No documentation available"
-            description="Index your codebase to gain documentation and AI insights."
+            description="Index your codebase to generate documentation and enable AI insights."
             icon={<FileText className="h-8 w-8" />}
           >
             <Button onClick={() => setShowGenerateModal(true)}>
-              Generate Documentation
+              Index Codebase
             </Button>
           </Empty>
         </div>
@@ -281,11 +149,10 @@ The initialization sequence defines the startup order of all components.`,
         <Dialog open={showGenerateModal} onOpenChange={setShowGenerateModal}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Generate Documentation</DialogTitle>
+              <DialogTitle>Index Codebase</DialogTitle>
               <DialogDescription>
-                This will index your codebase and generate comprehensive
-                documentation. This process may take a while depending on the
-                size of your repository.
+                This will index your codebase. This process may take a while
+                depending on the size of your repository.
               </DialogDescription>
             </DialogHeader>
             {error && (
@@ -307,7 +174,24 @@ The initialization sequence defines the startup order of all components.`,
                 onClick={handleGenerate}
                 disabled={isGenerating}
               >
-                {isGenerating ? "Generating..." : "Generate"}
+                {isGenerating ? (
+                  <div className="flex items-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      className="mr-2"
+                    >
+                      <Loader2 className="h-4 w-4" />
+                    </motion.div>
+                    Indexing...
+                  </div>
+                ) : (
+                  "Index"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
