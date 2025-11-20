@@ -108,3 +108,14 @@ export interface RepoValidationResult {
   repo_owner?: string;
   instance_url?: string; // For self-hosted
 }
+
+export type GitHubInstallation = {
+  id: string;
+  installation_id: string;
+  account_login: string;
+  account_type: string | null;
+  installed_by: string | null;
+  repositories_access: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
