@@ -1,44 +1,32 @@
 "use server";
 
-import { createAdminClient, createClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 import { ActionResult } from "@/app/types/action";
-import {
-  GitProviderToken,
-  RepoValidationResult,
-  GitProvider,
-} from "@/app/types/supabase";
-import { detectProvider } from "@/utils/gitProviders";
+import { GitProviderToken, GitProvider } from "@/app/types/supabase";
+import { githubApp } from "@/utils/github/app";
 
-export async function validateRepoUrl(
-  repoUrl: string,
-  provider?: GitProvider,
-  accessToken?: string,
-): Promise<ActionResult<RepoValidationResult>> {
-  //authenticate user
-  const client = await createClient();
+export async function verifyGithubRepoAccess(
+  installation_id: string,
+  owner: string,
+  repo: string,
+): Promise<boolean> {
+  try {
+    //convert installation_id to number
+    const installationId = parseInt(installation_id, 10);
+    const octokit = await githubApp.getInstallationOctokit(installationId);
 
-  const {
-    data: { user },
-  } = await client.auth.getUser();
+    await octokit.request("GET /repos/{owner}/{repo}", {
+      owner,
+      repo,
+    });
 
-  if (!user) {
-    return {
-      success: false,
-      error: "User not authenticated!",
-    };
+    return true;
+  } catch (error) {
+    if (error instanceof Error && "status" in error && error.status === 404) {
+      return false;
+    }
+    throw error;
   }
-
-  const detectedProvider = provider || detectProvider(repoUrl);
-
-  //TODO: Call the fast api backend to verify the url given a repoURL, plus provider and accessToken.
-
-  return {
-    success: true,
-    data: {
-      status: "valid_public",
-      message: "Repository URL is valid and public.",
-    },
-  };
 }
 
 export async function getProviderToken(
