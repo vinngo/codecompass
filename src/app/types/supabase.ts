@@ -78,3 +78,33 @@ export type OrganizationMember = {
   joined_at: string;
   user_email: string;
 };
+
+export type GitProvider = "github" | "gitlab" | "gitlab-self-hosted";
+
+export type GitProviderToken = {
+  id: string;
+  user_id: string;
+  provider: GitProvider;
+  access_token: string;
+  token_type: string;
+  scope: string | null;
+  created_at: string;
+  instance_url: string;
+};
+
+export type RepoValidationStatus =
+  | "valid_public" // Public repo, can clone immediately
+  | "valid_private" // Private repo, needs auth
+  | "invalid_url" // Malformed URL
+  | "not_found" // Repo doesn't exist
+  | "auth_required" // User needs to authenticate
+  | "unknown_provider"; // Provider not supported
+
+export interface RepoValidationResult {
+  status: RepoValidationStatus;
+  message: string;
+  provider?: GitProvider;
+  repo_name?: string;
+  repo_owner?: string;
+  instance_url?: string; // For self-hosted
+}

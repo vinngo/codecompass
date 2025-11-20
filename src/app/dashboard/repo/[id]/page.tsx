@@ -32,7 +32,7 @@ export default async function RepoPage({
     .single();
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       <NavbarContextSetter
         breadcrumbs={[
           { label: "Organizations", href: "/dashboard/organizations" },
