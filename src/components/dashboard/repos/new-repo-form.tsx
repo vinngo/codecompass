@@ -9,6 +9,7 @@ import {
   FieldError,
   FieldSet,
 } from "@/components/ui/field";
+import { Github } from "@geist-ui/icons";
 
 import { Input } from "@/components/ui/input";
 
@@ -44,6 +45,25 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
   const [githubUrl, setGithubUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [needsAuth, setNeedsAuth] = useState<boolean>(false);
+  const [authType, setAuthType] = useState<string | null>(null);
+
+  const handleGithubAuth = () => {
+    const width = 600;
+    const height = 700;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+
+    const redirectUrl = `${window.location.origin}/api/github/installation?org_id=${orgId}`;
+    const githubUrl = `https://github.com/apps/codecompass-app/installations/new?state=${encodeURIComponent(redirectUrl)}`;
+
+    window.open(
+      githubUrl,
+      "github-auth",
+      `width=${width},height=${height},left=${left},top=${top},popup=yes`,
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,6 +97,17 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
         const result = await createRepoViaGithub(formData, orgId);
 
         if (!result.success) {
+          if (result.error === "Name is required!") {
+            setNameError(result.error);
+            setIsLoading(false);
+            return;
+          }
+          if (result.error === "Installation Needed") {
+            setNeedsAuth(true);
+            setAuthType("github");
+            setIsLoading(false);
+            return;
+          }
           setError(result.error);
           setIsLoading(false);
           return;
@@ -129,7 +160,7 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
             <FieldDescription>
               Choose a name for the repository.
             </FieldDescription>
-            <FieldError>{error}</FieldError>
+            <FieldError>{nameError}</FieldError>
           </Field>
           <Separator />
           <Field>
@@ -168,8 +199,28 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
                   <FieldDescription>
                     Enter the URL of the Github repository.
                   </FieldDescription>
-                  <FieldError>{error}</FieldError>
                 </Field>
+                {needsAuth && (
+                  <div className="flex flex-col gap-3">
+                    <Separator />
+                    {authType === "github" ? (
+                      <FieldLabel>Add Github Authentication</FieldLabel>
+                    ) : (
+                      <FieldLabel>Add Authentication</FieldLabel>
+                    )}
+                    {authType === "github" && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-fit"
+                        onClick={handleGithubAuth}
+                      >
+                        <Github />
+                        Add GitHub Account or Organization
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             {type === "local" && (
@@ -202,7 +253,11 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
         <Separator />
 
         <div className="flex gap-3">
-          <Button type="submit" size="sm" disabled={isLoading || !name.trim()}>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isLoading || !name.trim() || needsAuth}
+          >
             {isLoading ? "Creating..." : "Create Repository"}
           </Button>
           <Button

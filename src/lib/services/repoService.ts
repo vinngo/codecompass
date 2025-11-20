@@ -9,6 +9,7 @@ import {
   ConversationMessage,
 } from "@/app/types/supabase";
 import { ActionResult } from "@/app/types/action";
+import { validateRepoUrl } from "./gitProviderService";
 
 export async function getReposByOrganizationId(
   organizationId: string,
@@ -51,6 +52,24 @@ export async function createRepoViaGithub(
   const name = formData.get("name") as string;
   const provider = formData.get("type") as string;
   const url = formData.get("github-url") as string;
+
+  if (!name) {
+    return { success: false, error: "Name is required!" };
+  }
+
+  const { data: installation } = await client
+    .from("github_installations")
+    .select("*")
+    .eq("installed_by", user.id)
+    .single();
+
+  if (!installation) {
+    // No GitHub App installation - prompt user to install
+    return {
+      success: false,
+      error: "Installation Needed",
+    };
+  }
 
   const { data: repo, error: repoError } = await client
     .from("repositories")
