@@ -272,9 +272,16 @@ export async function getRepoWithStatus(
   return { success: true, data: repo as Repo };
 }
 
+type UpdateData = {
+  name?: string;
+  repo_url?: string;
+  object_url?: string;
+  index_status?: string;
+};
+
 export async function updateRepoSettings(
   repoId: string,
-  settings: { name?: string },
+  settings: { name?: string; repo_url?: string; file?: File },
 ): Promise<ActionResult<Repo>> {
   const client = await createClient();
 
@@ -286,9 +293,94 @@ export async function updateRepoSettings(
     return { success: false, error: "User not authenticated!" };
   }
 
+  // Get the current repo to check its provider type
+  const { data: currentRepo } = await client
+    .from("repositories")
+    .select("*")
+    .eq("id", repoId)
+    .single();
+
+  if (!currentRepo) {
+    return { success: false, error: "Repository not found!" };
+  }
+
+  const updateData: UpdateData = {};
+
+  // Handle name update
+  if (settings.name) {
+    updateData.name = settings.name;
+  }
+
+  // Handle GitHub URL update
+  if (settings.repo_url && currentRepo.provider === "github") {
+    const { owner, repo } = parseGitHubUrl(settings.repo_url);
+
+    if (!owner || !repo) {
+      return { success: false, error: "Invalid GitHub URL format!" };
+    }
+
+    // Verify access to the new repo
+    const { data: installation } = await client
+      .from("github_installations")
+      .select("*")
+      .eq("installed_by", user.id)
+      .single();
+
+    if (!installation) {
+      return { success: false, error: "GitHub App not installed!" };
+    }
+
+    const hasAccess = await verifyGithubRepoAccess(
+      installation.installation_id.toString(),
+      owner,
+      repo,
+    );
+
+    if (!hasAccess) {
+      return {
+        success: false,
+        error:
+          "Cannot access this repository. Make sure the GitHub App is installed for this repository.",
+      };
+    }
+
+    updateData.repo_url = settings.repo_url;
+    updateData.index_status = "not indexed"; // Trigger re-indexing
+  }
+
+  // Handle local file upload
+  if (settings.file && currentRepo.provider === "local") {
+    const file = settings.file;
+    const fileExt = file.name.split(".").pop();
+
+    if (fileExt !== "zip") {
+      return { success: false, error: "Only .zip files are allowed!" };
+    }
+
+    // Upload to Supabase Storage
+    const fileName = `${repoId}-${Date.now()}.zip`;
+    const { data: uploadData, error: uploadError } = await client.storage
+      .from("local_repos")
+      .upload(fileName, file);
+
+    if (uploadError) {
+      console.error(uploadError);
+      return { success: false, error: "Failed to upload file!" };
+    }
+
+    // Get public URL
+    const { data: urlData } = client.storage
+      .from("local_repos")
+      .getPublicUrl(fileName);
+
+    updateData.object_url = urlData.publicUrl;
+    updateData.index_status = "pending"; // Trigger re-indexing
+  }
+
+  // Update the repository
   const { data: repo, error } = await client
     .from("repositories")
-    .update(settings)
+    .update(updateData)
     .eq("id", repoId)
     .select()
     .single();
@@ -431,7 +523,7 @@ export async function getDocPages(
   }
 
   const { data: pages, error } = await client
-    .from("doc_pages")
+    .from("pages")
     .select("*")
     .eq("documentation_id", documentation.id)
     .order("order_index", { ascending: true });
@@ -776,30 +868,37 @@ export async function indexRepository(
   const repoUrl = repoResult.data.repo_url;
   const installationId = installation.installation_id;
 
-  //TO-DO: CALL THE BACKEND TO START INDEXING
-
-  //body: {
-  //  repoUrl: ,
-  //  installationId: installation.id,
-  //}
-
-  //replace hardcoded value with result from calling the backend
-  const success = false;
-
-  if (!success) {
-    return { success: false, error: "Indexing failed!" };
-  }
-
-  //mark the repository as indexing in supabase
-  const { error } = await client
+  //mark the repository as indexing in supabase first
+  const { error: updateError } = await client
     .from("repositories")
     .update({ index_status: "indexing" })
     .eq("id", repoId);
 
-  if (error) {
-    console.error(error);
-    return { success: false, error: error.message };
+  if (updateError) {
+    console.error(updateError);
+    return { success: false, error: updateError.message };
   }
 
+  // Call the backend to start indexing (fire-and-forget)
+  // Don't await or throw errors since this is a long-running operation
+  fetch(`${process.env.BACKEND_URL}/repos/index`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      repo_url: repoUrl,
+      repo_id: repoId,
+      user_id: user.id,
+      installation_id: installationId,
+      branch: "main",
+    }),
+  }).catch((error) => {
+    // Log the error but don't fail the request
+    console.error("Indexing request failed:", error);
+    // The backend should handle updating the repo status on failure
+  });
+
+  // Return success immediately - the indexing will happen in the background
   return { success: true, data: undefined };
 }
