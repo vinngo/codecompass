@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Empty } from "@/components/ui/empty";
 import { useChatUIStore } from "@/lib/stores/useChatUIStore";
-import { indexRepository } from "@/lib/services/repoService";
+import { indexRepository, getDocPages } from "@/lib/services/repoService";
 import { motion } from "framer-motion";
 
 export default function DocumentationViewer({ repoId }: { repoId: string }) {
@@ -56,17 +56,60 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
     try {
       setIsLoading(true);
 
-      const mockPages: Page[] = [];
+      const result = await getDocPages(repoId);
 
-      const tree = buildFileTree(mockPages);
+      if (!result.success) {
+        console.error("Error fetching documentation:", result.error);
+        setFileTree([]);
+        setHasDocumentation(false);
+        setIsLoading(false);
+        return;
+      }
+
+      // Map DocPage[] to Page[]
+      const pages: Page[] = result.data.map((docPage) => {
+        // Helper function to parse JSON fields to string arrays
+        const parseToStringArray = (field: unknown): string[] | null => {
+          if (!field) return null;
+          if (Array.isArray(field)) return field;
+          if (typeof field === "string") {
+            try {
+              const parsed = JSON.parse(field);
+              return Array.isArray(parsed) ? parsed : null;
+            } catch {
+              return null;
+            }
+          }
+          return null;
+        };
+
+        return {
+          id: docPage.id,
+          documentation_id: docPage.documentation_id,
+          title: docPage.title ?? "Untitled",
+          slug: docPage.slug ?? "",
+          content: docPage.content ?? "",
+          order_index: docPage.order_index ?? 0,
+          parent_page_id: docPage.parent_page_id,
+          referenced_files: parseToStringArray(docPage.referenced_files),
+          referenced_symbols: parseToStringArray(docPage.referenced_symbols),
+          metadata: docPage.metadata,
+          created_at: docPage.created_at,
+          updated_at: docPage.updated_at ?? docPage.created_at,
+          version: 1, // Default version for now
+        };
+      });
+
+      const tree = buildFileTree(pages);
       setFileTree(tree);
-      setLastIndexed("19 October 2025 (cc66fc)");
 
-      setExpandedNodes(new Set(["1", "4"]));
-      setSelectedFile(mockPages[0]);
+      // Set the first page as selected if available
+      if (pages.length > 0) {
+        setSelectedFile(pages[0]);
+      }
 
       // Update chat UI store with documentation availability
-      setHasDocumentation(mockPages.length > 0);
+      setHasDocumentation(pages.length > 0);
     } catch (error) {
       console.error("Error fetching documentation:", error);
       setHasDocumentation(false);
