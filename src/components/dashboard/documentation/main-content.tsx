@@ -1,6 +1,6 @@
 import { ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   Select,
   SelectContent,
@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDocumentationStore } from "@/lib/stores/useDocumentationStore";
 
 interface Page {
   id: string;
@@ -36,7 +37,14 @@ export function MainContent({
 }: MainContentProps) {
   const internalRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = externalRef || internalRef;
-  const [selectedVersion, setSelectedVersion] = useState("v0");
+
+  const selectedVersion = useDocumentationStore(
+    (state) => state.selectedVersion,
+  );
+  const availableVersions = useDocumentationStore(
+    (state) => state.availableVersions,
+  );
+  const selectVersion = useDocumentationStore((state) => state.selectVersion);
 
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -45,9 +53,7 @@ export function MainContent({
   }, [selectedFile, scrollContainerRef]);
 
   const handleVersionChange = (version: string) => {
-    setSelectedVersion(version);
-    // TODO: Fetch documentation for the selected version
-    console.log("Version changed to:", version);
+    selectVersion(parseInt(version, 10));
   };
 
   if (!selectedFile) {
@@ -72,15 +78,19 @@ export function MainContent({
       <div className="border-b border-grey-800 px-6 py-3 flex items-center justify-between">
         <div className="flex flex-row gap-5 items-center">
           <h1 className="text-xl font-bold">{selectedFile.title}</h1>
-          <Select value={selectedVersion} onValueChange={handleVersionChange}>
+          <Select
+            value={selectedVersion?.toString()}
+            onValueChange={handleVersionChange}
+          >
             <SelectTrigger className="w-17 h-8 text-sm font-semibold">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="v0">v0</SelectItem>
-              <SelectItem value="v1">v1</SelectItem>
-              <SelectItem value="v2">v2</SelectItem>
-              <SelectItem value="v3">v3</SelectItem>
+              {availableVersions.map((v) => (
+                <SelectItem key={v.version} value={v.version.toString()}>
+                  v{v.version}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
