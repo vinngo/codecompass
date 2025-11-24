@@ -2,7 +2,7 @@ import AnimatedSkeleton from "./animated-skeleton";
 import MessageBubble from "./message-bubble";
 
 interface Message {
-  id: number;
+  id: string;
   text: string;
   sender: "user" | "assistant";
   timestamp: string;

@@ -13,11 +13,14 @@ interface ChatUIState {
   selectedModel: LLMModel;
   conversation: Conversation | null;
   hasDocumentation: boolean;
+  repoId: string | null;
   expand: (message: string) => void;
   minimize: () => void;
   setSelectedModel: (model: LLMModel) => void;
   toggle: () => void;
   setHasDocumentation: (hasDocumentation: boolean) => void;
+  setRepoId: (repoId: string) => void;
+  reset: () => void;
 }
 
 const DEFAULT_MODEL: LLMModel = {
@@ -32,10 +35,21 @@ export const useChatUIStore = create<ChatUIState>((set) => ({
   selectedModel: DEFAULT_MODEL,
   conversation: null,
   hasDocumentation: false,
+  repoId: null,
   expand: (message: string) =>
     set({ isExpanded: true, initialMessage: message }),
   minimize: () => set({ isExpanded: false, initialMessage: "" }),
   setSelectedModel: (model: LLMModel) => set({ selectedModel: model }),
   toggle: () => set((state) => ({ isExpanded: !state.isExpanded })),
   setHasDocumentation: (hasDocumentation: boolean) => set({ hasDocumentation }),
+  setRepoId: (repoId: string) => set({ repoId }),
+  reset: () =>
+    set({
+      isExpanded: false,
+      initialMessage: "",
+      selectedModel: DEFAULT_MODEL,
+      conversation: null,
+      hasDocumentation: false,
+      repoId: null,
+    }),
 }));
