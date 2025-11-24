@@ -20,6 +20,8 @@ interface ChatUIState {
   toggle: () => void;
   setHasDocumentation: (hasDocumentation: boolean) => void;
   setRepoId: (repoId: string) => void;
+  startNewConversation: () => void;
+  setConversation: (conversation: Conversation | null) => void;
   reset: () => void;
 }
 
@@ -43,6 +45,8 @@ export const useChatUIStore = create<ChatUIState>((set) => ({
   toggle: () => set((state) => ({ isExpanded: !state.isExpanded })),
   setHasDocumentation: (hasDocumentation: boolean) => set({ hasDocumentation }),
   setRepoId: (repoId: string) => set({ repoId }),
+  startNewConversation: () => set({ conversation: null, initialMessage: "" }),
+  setConversation: (conversation: Conversation | null) => set({ conversation }),
   reset: () =>
     set({
       isExpanded: false,

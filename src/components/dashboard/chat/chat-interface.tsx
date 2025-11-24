@@ -7,8 +7,12 @@ import ChatInput from "./chat-input";
 import AnswerPanel from "./answer-panel";
 import ChatEmptyState from "./chat-empty-state";
 import ModelSelector, { AVAILABLE_MODELS } from "./model-selector";
-import { useQuery } from "@tanstack/react-query";
-import { getConversationMessages } from "@/lib/services/repoService";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getConversationMessages,
+  createConversation,
+  createMessage,
+} from "@/lib/services/repoService";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Message {
@@ -72,6 +76,7 @@ function MessageListSkeleton() {
 }
 
 export default function ChatInterface() {
+  const queryClient = useQueryClient();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationTurns, setConversationTurns] = useState<
     ConversationTurn[]
@@ -83,6 +88,8 @@ export default function ChatInterface() {
   const selectedModel = useChatUIStore((state) => state.selectedModel);
   const setSelectedModel = useChatUIStore((state) => state.setSelectedModel);
   const conversation = useChatUIStore((state) => state.conversation);
+  const setConversation = useChatUIStore((state) => state.setConversation);
+  const repoId = useChatUIStore((state) => state.repoId);
   const hasSentInitialMessage = useRef(false);
 
   // Fetch messages for selected conversation
@@ -108,6 +115,38 @@ export default function ChatInterface() {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+    // If no conversation exists, create one
+    let currentConversation = conversation;
+    if (!currentConversation && repoId) {
+      const result = await createConversation(repoId, userQuestion);
+      if (result.success) {
+        currentConversation = result.data;
+        setConversation(currentConversation);
+
+        // Invalidate conversations query to refresh the list
+        queryClient.invalidateQueries({
+          queryKey: ["conversations", repoId],
+        });
+      } else {
+        console.error("Failed to create conversation:", result.error);
+        setChatInputDisabled(false);
+        setResponseLoading(false);
+        return;
+      }
+    }
+
+    // Save user message to database
+    if (currentConversation) {
+      const messageResult = await createMessage(
+        currentConversation.id,
+        "user",
+        userQuestion,
+      );
+      if (!messageResult.success) {
+        console.error("Failed to save user message:", messageResult.error);
+      }
+    }
 
     // Add user message to chat
     setMessages((prevMessages) => [
@@ -248,6 +287,21 @@ export default function ChatInterface() {
         }
       }
 
+      // Save assistant message to database
+      if (currentConversation && accumulatedText) {
+        const assistantMessageResult = await createMessage(
+          currentConversation.id,
+          "assistant",
+          accumulatedText,
+        );
+        if (!assistantMessageResult.success) {
+          console.error(
+            "Failed to save assistant message:",
+            assistantMessageResult.error,
+          );
+        }
+      }
+
       // Update conversation turn with final state
       setConversationTurns((prevTurns) =>
         prevTurns.map((turn) =>
@@ -299,12 +353,10 @@ export default function ChatInterface() {
     sendMessage(inputValue);
   };
 
-  // Clear messages when conversation changes (before new messages load)
+  // Clear messages when conversation changes (including when set to null)
   useEffect(() => {
-    if (conversation) {
-      setMessages([]);
-      setConversationTurns([]);
-    }
+    setMessages([]);
+    setConversationTurns([]);
   }, [conversation?.id]);
 
   // Load conversation messages when they're fetched
