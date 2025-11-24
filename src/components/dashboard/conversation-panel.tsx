@@ -15,14 +15,15 @@ export default function ConversationPanel() {
     isExpanded: chatExpanded,
     conversation: selectedConversation,
     repoId,
+    selectedVersion,
   } = useChatUIStore();
 
   // Fetch conversations using TanStack Query
   const { data: conversations = [], isLoading } = useQuery({
-    queryKey: ["conversations", repoId],
+    queryKey: ["conversations", repoId, selectedVersion],
     queryFn: async () => {
       if (!repoId) return [];
-      const result = await getConversations(repoId, 20);
+      const result = await getConversations(repoId, 20, selectedVersion);
       if (!result.success) throw new Error(result.error);
       return result.data;
     },

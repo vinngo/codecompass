@@ -63,6 +63,7 @@ export type Conversation = {
   repo_id: string;
   title: string | null;
   updated_at: string | null;
+  repo_version: number | null;
 };
 
 export type ConversationMessage = {

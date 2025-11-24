@@ -728,6 +728,7 @@ export async function getDocPagesForVersion(
 export async function getConversations(
   repoId: string,
   limit: number = 20,
+  version: number | null = null,
 ): Promise<ActionResult<Conversation[]>> {
   const client = await createClient();
 
@@ -739,11 +740,18 @@ export async function getConversations(
     return { success: false, error: "User not authenticated!" };
   }
 
-  const { data: conversations, error } = await client
+  let query = client
     .from("conversations")
     .select("*")
     .eq("repo_id", repoId)
-    .eq("user_id", user.id)
+    .eq("user_id", user.id);
+
+  // Filter by version if specified
+  if (version !== null && version !== undefined) {
+    query = query.eq("repo_version", version);
+  }
+
+  const { data: conversations, error } = await query
     .order("updated_at", { ascending: false })
     .limit(limit);
 
@@ -790,6 +798,7 @@ export async function getConversationById(
 export async function createConversation(
   repoId: string,
   title?: string,
+  version?: number | null,
 ): Promise<ActionResult<Conversation>> {
   const client = await createClient();
 
@@ -807,6 +816,7 @@ export async function createConversation(
       repo_id: repoId,
       user_id: user.id,
       title: title || "New Conversation",
+      repo_version: version ?? null,
     })
     .select()
     .single();
