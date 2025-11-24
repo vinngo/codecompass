@@ -510,11 +510,13 @@ export async function getDocPages(
     return { success: false, error: "User not authenticated!" };
   }
 
-  // First get the documentation ID for this repo
+  // Get the latest documentation version for this repo
   const { data: documentation, error: docError } = await client
     .from("documentation")
     .select("id")
     .eq("repo_id", repoId)
+    .order("version", { ascending: false })
+    .limit(1)
     .single();
 
   if (docError || !documentation) {
@@ -606,6 +608,116 @@ export async function getDocPagesHierarchical(
   // Pages are already sorted by order_index
   // The parent_page_id field maintains the hierarchy
   // Frontend can use this to render the tree structure
+  return { success: true, data: (pages ?? []) as DocPage[] };
+}
+
+/**
+ * Get all documentation versions for a repository
+ */
+export async function getDocumentationVersions(
+  repoId: string,
+): Promise<ActionResult<Documentation[]>> {
+  const client = await createClient();
+
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated!" };
+  }
+
+  const { data: versions, error } = await client
+    .from("documentation")
+    .select("*")
+    .eq("repo_id", repoId)
+    .order("version", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: (versions ?? []) as Documentation[] };
+}
+
+/**
+ * Get the latest completed documentation version for a repository
+ */
+export async function getLatestDocumentation(
+  repoId: string,
+): Promise<ActionResult<Documentation>> {
+  const client = await createClient();
+
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated!" };
+  }
+
+  const { data: documentation, error } = await client
+    .from("documentation")
+    .select("*")
+    .eq("repo_id", repoId)
+    .order("version", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    console.error(error);
+    return { success: false, error: error.message };
+  }
+
+  if (!documentation) {
+    return { success: false, error: "Documentation not found" };
+  }
+
+  return { success: true, data: documentation as Documentation };
+}
+
+/**
+ * Get documentation pages for a specific version
+ */
+export async function getDocPagesForVersion(
+  repoId: string,
+  version: number,
+): Promise<ActionResult<DocPage[]>> {
+  const client = await createClient();
+
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated!" };
+  }
+
+  // Get the documentation record for this version
+  const { data: documentation, error: docError } = await client
+    .from("documentation")
+    .select("id")
+    .eq("repo_id", repoId)
+    .eq("version", version)
+    .single();
+
+  if (docError || !documentation) {
+    console.error(docError);
+    return { success: false, error: "Documentation version not found" };
+  }
+
+  const { data: pages, error } = await client
+    .from("pages")
+    .select("*")
+    .eq("documentation_id", documentation.id)
+    .order("order_index", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return { success: false, error: error.message };
+  }
+
   return { success: true, data: (pages ?? []) as DocPage[] };
 }
 
@@ -868,6 +980,18 @@ export async function indexRepository(
   const repoUrl = repoResult.data.repo_url;
   const installationId = installation.installation_id;
 
+  // Get the latest version number for this repo
+  const { data: latestDoc } = await client
+    .from("documentation")
+    .select("version")
+    .eq("repo_id", repoId)
+    .order("version", { ascending: false })
+    .limit(1)
+    .single();
+
+  // Increment version (start at 1 if no previous versions)
+  const nextVersion = (latestDoc?.version ?? 0) + 1;
+
   //mark the repository as indexing in supabase first
   const { error: updateError } = await client
     .from("repositories")
@@ -892,6 +1016,7 @@ export async function indexRepository(
       user_id: user.id,
       installation_id: installationId,
       branch: "main",
+      version: nextVersion,
     }),
   }).catch((error) => {
     // Log the error but don't fail the request
