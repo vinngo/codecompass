@@ -24,7 +24,7 @@ export type Repo = {
   repo_url: string | null;
   last_indexed_at: string | null;
   metadata: JSON | null;
-  index_status: "pending" | "processing" | "completed" | "failed" | null;
+  index_status: "not indexed" | "indexed" | "indexing";
   object_url: string | null;
   name: string;
 };
@@ -37,6 +37,7 @@ export type Documentation = {
   description: string | null;
   metadata: JSON | null;
   updated_at: string | null;
+  version: number | null;
 };
 
 export type DocPage = {
@@ -52,6 +53,7 @@ export type DocPage = {
   referenced_symbols: JSON | null;
   metadata: JSON | null;
   updated_at: string | null;
+  repo_version: number | null;
 };
 
 export type Conversation = {
