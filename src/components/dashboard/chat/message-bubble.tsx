@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 
 interface MessageBubbleProps {
-  id: number;
+  id: string;
   text: string;
   sender: "user" | "assistant";
   timestamp: string;

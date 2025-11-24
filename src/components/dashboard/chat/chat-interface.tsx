@@ -7,9 +7,16 @@ import ChatInput from "./chat-input";
 import AnswerPanel from "./answer-panel";
 import ChatEmptyState from "./chat-empty-state";
 import ModelSelector, { AVAILABLE_MODELS } from "./model-selector";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getConversationMessages,
+  createConversation,
+  createMessage,
+} from "@/lib/services/repoService";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Message {
-  id: number;
+  id: string;
   text: string;
   sender: "user" | "assistant";
   timestamp: string;
@@ -28,7 +35,48 @@ interface ConversationTurn {
   loading: boolean;
 }
 
+function MessageListSkeleton() {
+  return (
+    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-8">
+      {/* User message skeleton */}
+      <div className="mb-8 flex flex-row gap-6 px-5">
+        <div className="flex-1 space-y-3">
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+        <Skeleton className="h-10 w-48 rounded-md" />
+      </div>
+
+      {/* Assistant message skeleton */}
+      <div className="mb-8">
+        <div className="mt-6">
+          <div className="bg-elevated rounded-lg border border-gray-800 p-6">
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-800">
+              <Skeleton className="h-8 w-8 rounded-md" />
+              <Skeleton className="h-8 w-8 rounded-md" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* User message skeleton */}
+      <div className="mb-8 flex flex-row gap-6 px-5">
+        <div className="flex-1 space-y-3">
+          <Skeleton className="h-8 w-2/3" />
+        </div>
+        <Skeleton className="h-10 w-48 rounded-md" />
+      </div>
+    </div>
+  );
+}
+
 export default function ChatInterface() {
+  const queryClient = useQueryClient();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationTurns, setConversationTurns] = useState<
     ConversationTurn[]
@@ -39,7 +87,23 @@ export default function ChatInterface() {
   const initialMessage = useChatUIStore((state) => state.initialMessage);
   const selectedModel = useChatUIStore((state) => state.selectedModel);
   const setSelectedModel = useChatUIStore((state) => state.setSelectedModel);
+  const conversation = useChatUIStore((state) => state.conversation);
+  const setConversation = useChatUIStore((state) => state.setConversation);
+  const repoId = useChatUIStore((state) => state.repoId);
   const hasSentInitialMessage = useRef(false);
+
+  // Fetch messages for selected conversation
+  const { data: conversationMessages, isLoading: messagesLoading } = useQuery({
+    queryKey: ["messages", conversation?.id],
+    queryFn: async () => {
+      if (!conversation?.id) return [];
+      const result = await getConversationMessages(conversation.id);
+      if (!result.success) throw new Error(result.error);
+      return result.data;
+    },
+    enabled: !!conversation?.id,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 
   const sendMessage = async (text: string) => {
     if (chatInputDisabled || !text.trim()) return;
@@ -52,11 +116,43 @@ export default function ChatInterface() {
       minute: "2-digit",
     });
 
+    // If no conversation exists, create one
+    let currentConversation = conversation;
+    if (!currentConversation && repoId) {
+      const result = await createConversation(repoId, userQuestion);
+      if (result.success) {
+        currentConversation = result.data;
+        setConversation(currentConversation);
+
+        // Invalidate conversations query to refresh the list
+        queryClient.invalidateQueries({
+          queryKey: ["conversations", repoId],
+        });
+      } else {
+        console.error("Failed to create conversation:", result.error);
+        setChatInputDisabled(false);
+        setResponseLoading(false);
+        return;
+      }
+    }
+
+    // Save user message to database
+    if (currentConversation) {
+      const messageResult = await createMessage(
+        currentConversation.id,
+        "user",
+        userQuestion,
+      );
+      if (!messageResult.success) {
+        console.error("Failed to save user message:", messageResult.error);
+      }
+    }
+
     // Add user message to chat
     setMessages((prevMessages) => [
       ...prevMessages,
       {
-        id: prevMessages.length + 1,
+        id: `temp-${Date.now()}`,
         text: userQuestion,
         sender: "user",
         timestamp,
@@ -104,7 +200,7 @@ export default function ChatInterface() {
       const decoder = new TextDecoder();
       let accumulatedText = "";
       let buffer = ""; // Buffer for incomplete SSE messages
-      const assistantMessageId = Date.now();
+      const assistantMessageId = `temp-assistant-${Date.now()}`;
       let firstContentReceived = false;
 
       // Read the stream
@@ -191,6 +287,21 @@ export default function ChatInterface() {
         }
       }
 
+      // Save assistant message to database
+      if (currentConversation && accumulatedText) {
+        const assistantMessageResult = await createMessage(
+          currentConversation.id,
+          "assistant",
+          accumulatedText,
+        );
+        if (!assistantMessageResult.success) {
+          console.error(
+            "Failed to save assistant message:",
+            assistantMessageResult.error,
+          );
+        }
+      }
+
       // Update conversation turn with final state
       setConversationTurns((prevTurns) =>
         prevTurns.map((turn) =>
@@ -210,7 +321,7 @@ export default function ChatInterface() {
       setMessages((prevMessages) => [
         ...prevMessages,
         {
-          id: Date.now(),
+          id: `temp-error-${Date.now()}`,
           text: `Sorry, I encountered an error: ${error instanceof Error ? error.message : "Unknown error"}. Please try again.`,
           sender: "assistant",
           timestamp: new Date().toLocaleTimeString("en-US", {
@@ -242,6 +353,28 @@ export default function ChatInterface() {
     sendMessage(inputValue);
   };
 
+  // Clear messages when conversation changes (including when set to null)
+  useEffect(() => {
+    setMessages([]);
+    setConversationTurns([]);
+  }, [conversation?.id]);
+
+  // Load conversation messages when they're fetched
+  useEffect(() => {
+    if (conversationMessages && conversationMessages.length > 0) {
+      const loadedMessages: Message[] = conversationMessages.map((msg) => ({
+        id: msg.id,
+        text: msg.content,
+        sender: msg.role,
+        timestamp: new Date(msg.created_at).toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      }));
+      setMessages(loadedMessages);
+    }
+  }, [conversationMessages]);
+
   // Auto-send initial message when component mounts
   useEffect(() => {
     if (initialMessage && !hasSentInitialMessage.current) {
@@ -251,7 +384,11 @@ export default function ChatInterface() {
   }, [initialMessage]);
 
   // Show empty state when there are no messages and no initial message
-  const showEmptyState = messages.length === 0 && !initialMessage;
+  const showEmptyState =
+    messages.length === 0 && !initialMessage && !conversation;
+
+  // Show loading state when fetching messages for a selected conversation
+  const showMessagesLoading = messagesLoading && !!conversation;
 
   return (
     <div className="flex h-[calc(100vh-64px)] bg-grey-950 text-grey-300">
@@ -267,6 +404,8 @@ export default function ChatInterface() {
 
         {showEmptyState ? (
           <ChatEmptyState onSendMessage={sendMessage} />
+        ) : showMessagesLoading ? (
+          <MessageListSkeleton />
         ) : (
           <MessageList messages={messages} loading={responseLoading} />
         )}

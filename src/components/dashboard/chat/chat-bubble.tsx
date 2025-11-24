@@ -32,28 +32,26 @@ export default function ChatBubble() {
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] sm:w-[400px] md:w-[500px] lg:w-[600px] xl:w-[700px]">
-      <div className="shadow-lg border-grey-800">
-        <div className="w-full mx-auto">
-          <div className="relative">
-            <textarea
-              placeholder="Ask about this codebase"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={2}
-              className="w-full bg-grey-800 text-grey-100 px-4 py-3 pr-12 rounded-lg border border-border focus:outline-none
+      <div className="w-full mx-auto">
+        <div className="relative">
+          <textarea
+            placeholder="Ask about this codebase"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={2}
+            className="w-full bg-grey-800 text-grey-100 px-4 py-3 pr-12 rounded-lg border border-border focus:outline-none
                       focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 focus:shadow-[0_0_15px_rgba(20,184,166,0.3)]
                       placeholder-grey-500 resize-none disabled:opacity-50 disabled:cursor-not-allowed
                       transition-shadow duration-200 bg-background opacity-90"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!inputValue.trim()}
-              className="absolute bottom-3 right-3 p-2 text-teal-500 hover:text-teal-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send size={20} />
-            </button>
-          </div>
+          />
+          <button
+            onClick={handleSend}
+            disabled={!inputValue.trim()}
+            className="absolute bottom-3 right-3 p-2 text-teal-500 hover:text-teal-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send size={20} />
+          </button>
         </div>
       </div>
     </div>

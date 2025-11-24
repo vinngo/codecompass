@@ -9,6 +9,7 @@ import {
   Settings,
   BookOpen,
   MessageSquare,
+  MessageSquarePlus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -100,6 +101,17 @@ export function DashboardSidebar() {
               }}
               disabled={!hasDocumentation}
             />
+
+            {chatExpanded && (
+              <SidebarItem
+                icon={<MessageSquarePlus className="h-5 w-5" />}
+                label="New Message"
+                action={() => {
+                  const { startNewConversation } = useChatUIStore.getState();
+                  startNewConversation();
+                }}
+              />
+            )}
 
             {chatExpanded && <ConversationPanel />}
             <SidebarItem

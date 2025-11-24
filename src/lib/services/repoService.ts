@@ -894,7 +894,7 @@ export async function getConversationMessages(
   }
 
   const { data: messages, error } = await client
-    .from("conversation_messages")
+    .from("messages")
     .select("*")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
