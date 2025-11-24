@@ -1,6 +1,6 @@
 export default function Comparison() {
   return (
-    <div className="w-full max-w-7xl px-4 sm:px-6 py-16">
+    <div id="comparison" className="w-full max-w-7xl px-4 sm:px-6 py-16" style={{ scrollMarginTop: '100px' }}>
       <h2 className="text-4xl font-bold text-center mb-4">
         How CodeCompass will stand apart
       </h2>
@@ -16,26 +16,26 @@ export default function Comparison() {
             Traditional Documentation
           </h3>
           <ul className="space-y-3">
-            <li className="flex items-start gap-2">
-              <span className="text-red-500 mt-1">•</span>
+            <li className="flex items-center gap-2">
+              <span className="text-red-500 text-lg">✗</span>
               <span className="text-gray-400 text-sm">
                 Manual updates required
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-red-500 mt-1">•</span>
+            <li className="flex items-center gap-2">
+              <span className="text-red-500 text-lg">✗</span>
               <span className="text-gray-400 text-sm">
                 Quickly becomes outdated
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-red-500 mt-1">•</span>
+            <li className="flex items-center gap-2">
+              <span className="text-red-500 text-lg">✗</span>
               <span className="text-gray-400 text-sm">
                 Static, non-interactive
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-red-500 mt-1">•</span>
+            <li className="flex items-center gap-2">
+              <span className="text-red-500 text-lg">✗</span>
               <span className="text-gray-400 text-sm">
                 No contextual answers
               </span>
@@ -52,38 +52,38 @@ export default function Comparison() {
             <h3 className="text-xl font-semibold">CodeCompass</h3>
           </div>
           <ul className="space-y-3">
-            <li className="flex items-start gap-2">
-              <span className="text-teal-500 mt-1">✓</span>
+            <li className="flex items-center gap-2">
+              <span className="text-teal-500 text-lg">✓</span>
               <span className="text-foreground text-sm font-medium">
                 AI-powered exploration
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-teal-500 mt-1">✓</span>
+            <li className="flex items-center gap-2">
+              <span className="text-teal-500 text-lg">✓</span>
               <span className="text-foreground text-sm font-medium">
                 Auto-generated docs
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-teal-500 mt-1">✓</span>
+            <li className="flex items-center gap-2">
+              <span className="text-teal-500 text-lg">✓</span>
               <span className="text-foreground text-sm font-medium">
                 Interactive chat interface
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-teal-500 mt-1">✓</span>
+            <li className="flex items-center gap-2">
+              <span className="text-teal-500 text-lg">✓</span>
               <span className="text-foreground text-sm font-medium">
                 Multi-platform support
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-teal-500 mt-1">✓</span>
+            <li className="flex items-center gap-2">
+              <span className="text-teal-500 text-lg">✓</span>
               <span className="text-foreground text-sm font-medium">
                 Local & cloud deployment
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-teal-500 mt-1">✓</span>
+            <li className="flex items-center gap-2">
+              <span className="text-teal-500 text-lg">✓</span>
               <span className="text-foreground text-sm font-medium">
                 Open source
               </span>
@@ -95,20 +95,20 @@ export default function Comparison() {
         <div className="border border-gray-800 rounded-xl p-6 bg-background">
           <h3 className="text-xl font-semibold mb-6">Other Such Tools</h3>
           <ul className="space-y-3">
-            <li className="flex items-start gap-2">
-              <span className="text-orange-500 mt-1">•</span>
+            <li className="flex items-center gap-2">
+              <span className="text-orange-500 text-lg">✗</span>
               <span className="text-gray-400 text-sm">
                 Limited platform support (only GitHub)
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-orange-500 mt-1">•</span>
+            <li className="flex items-center gap-2">
+              <span className="text-orange-500 text-lg">✗</span>
               <span className="text-gray-400 text-sm">
                 Cloud-only solutions (No self-hosting option)
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-orange-500 mt-1">•</span>
+            <li className="flex items-center gap-2">
+              <span className="text-orange-500 text-lg">✗</span>
               <span className="text-gray-400 text-sm">
                 Proprietary systems (Not Open Source)
               </span>

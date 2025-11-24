@@ -9,6 +9,7 @@ import {
   FieldError,
   FieldSet,
 } from "@/components/ui/field";
+import { Github } from "@geist-ui/icons";
 
 import { Input } from "@/components/ui/input";
 
@@ -44,6 +45,7 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
   const [githubUrl, setGithubUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,6 +79,16 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
         const result = await createRepoViaGithub(formData, orgId);
 
         if (!result.success) {
+          if (result.error === "Name is required!") {
+            setNameError(result.error);
+            setIsLoading(false);
+            return;
+          }
+          if (result.error === "Installation Needed") {
+            // Automatically redirect to GitHub App installation page
+            router.push(`/dashboard/install-github-app?org_id=${orgId}`);
+            return;
+          }
           setError(result.error);
           setIsLoading(false);
           return;
@@ -129,7 +141,7 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
             <FieldDescription>
               Choose a name for the repository.
             </FieldDescription>
-            <FieldError>{error}</FieldError>
+            <FieldError>{nameError}</FieldError>
           </Field>
           <Separator />
           <Field>
@@ -168,7 +180,6 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
                   <FieldDescription>
                     Enter the URL of the Github repository.
                   </FieldDescription>
-                  <FieldError>{error}</FieldError>
                 </Field>
               </div>
             )}

@@ -5,27 +5,34 @@ import { Sidebar, SidebarItem } from "@/components/dashboard/sidebar";
 import {
   FolderCode,
   Building2,
-  Home,
   Users,
   Settings,
-  FileText,
+  BookOpen,
   MessageSquare,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
+import { useChatUIStore } from "@/lib/stores/useChatUIStore";
+import ConversationPanel from "./conversation-panel";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const params = useParams();
   const router = useRouter();
+  const { hasDocumentation } = useChatUIStore();
+
+  const { toggle, isExpanded: chatExpanded } = useChatUIStore();
 
   // Access dynamic route parameters
   const id = params.id as string | undefined;
 
   // Determine the current context based on pathname patterns
   const currentContext = useMemo(() => {
+    if (pathname.startsWith("/dashboard/organizations")) {
+      return { type: "organizations", id };
+    }
     if (pathname.startsWith("/dashboard/org/") && id) {
-      return { type: "organization", id };
+      return { type: "org", id };
     }
     if (pathname.startsWith("/dashboard/repo/") && id) {
       return { type: "repository", id };
@@ -36,7 +43,18 @@ export function DashboardSidebar() {
   // Render different sidebar items based on context
   const renderContextualItems = () => {
     switch (currentContext.type) {
-      case "organization":
+      case "organizations":
+        return (
+          <>
+            <SidebarItem
+              icon={<Building2 className="h-5 w-5" />}
+              label="Organizations"
+              action={() => router.push(`/dashboard/organizations`)}
+            />
+          </>
+        );
+
+      case "org":
         return (
           <>
             <SidebarItem
@@ -65,17 +83,25 @@ export function DashboardSidebar() {
         return (
           <>
             <SidebarItem
-              icon={<FileText className="h-5 w-5" />}
-              label="Documentation"
-              action={() => router.push(`/dashboard/repo/${currentContext.id}`)}
-            />
-            <SidebarItem
-              icon={<MessageSquare className="h-5 w-5" />}
-              label="Chat"
-              action={() =>
-                router.push(`/dashboard/repo/${currentContext.id}/chat`)
+              icon={
+                chatExpanded ? (
+                  <BookOpen className="h-5 w-5" />
+                ) : (
+                  <MessageSquare className="h-5 w-5" />
+                )
               }
+              label={chatExpanded ? "Documentation" : "Chat"}
+              action={() => {
+                // Navigate to repo page if not already there
+                if (pathname !== `/dashboard/repo/${currentContext.id}`) {
+                  router.push(`/dashboard/repo/${currentContext.id}`);
+                }
+                toggle();
+              }}
+              disabled={!hasDocumentation}
             />
+
+            {chatExpanded && <ConversationPanel />}
             <SidebarItem
               icon={<Settings className="h-5 w-5" />}
               label="Settings"

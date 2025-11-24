@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { DashboardProvider } from "./dashboard-provider";
 import { User } from "@/app/types/supabase";
+import { ScrollArea } from "@/components/dashboard/scroll-area";
 
 export default async function DashboardLayout({
   children,
@@ -22,11 +23,11 @@ export default async function DashboardLayout({
 
   return (
     <DashboardProvider initialUser={user as User}>
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="flex flex-col h-screen overflow-hidden bg-background">
         <DashboardNavbar />
-        <div className="flex flex-1">
+        <div className="flex flex-1 overflow-hidden">
           <DashboardSidebar />
-          <main className="flex-1 overflow-y-auto p-6">{children}</main>
+          <ScrollArea>{children}</ScrollArea>
         </div>
       </div>
     </DashboardProvider>

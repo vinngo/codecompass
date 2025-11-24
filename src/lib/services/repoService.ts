@@ -9,6 +9,33 @@ import {
   ConversationMessage,
 } from "@/app/types/supabase";
 import { ActionResult } from "@/app/types/action";
+import { verifyGithubRepoAccess } from "./gitProviderService";
+
+// Helper function to parse GitHub URLs
+function parseGitHubUrl(url: string): { owner: string; repo: string } {
+  try {
+    // Handle multiple formats:
+    // - https://github.com/owner/repo
+    // - https://github.com/owner/repo.git
+    // - git@github.com:owner/repo.git
+
+    url = url.trim().replace(/\.git$/, "");
+
+    if (url.includes("github.com/")) {
+      const parts = url.split("github.com/")[1].split("/");
+      return { owner: parts[0], repo: parts[1] };
+    }
+
+    if (url.startsWith("git@github.com:")) {
+      const parts = url.replace("git@github.com:", "").split("/");
+      return { owner: parts[0], repo: parts[1] };
+    }
+
+    return { owner: "", repo: "" };
+  } catch (error) {
+    return { owner: "", repo: "" };
+  }
+}
 
 export async function getReposByOrganizationId(
   organizationId: string,
@@ -51,6 +78,40 @@ export async function createRepoViaGithub(
   const name = formData.get("name") as string;
   const provider = formData.get("type") as string;
   const url = formData.get("github-url") as string;
+
+  if (!name) {
+    return { success: false, error: "Name is required!" };
+  }
+
+  const { data: installation } = await client
+    .from("github_installations")
+    .select("*")
+    .eq("installed_by", user.id)
+    .single();
+
+  if (!installation) {
+    // No GitHub App installation - prompt user to install
+    return {
+      success: false,
+      error: "Installation Needed",
+    };
+  }
+
+  //parse url for owner and repo
+  const { owner, repo: repoName } = parseGitHubUrl(url);
+
+  const hasAccess = await verifyGithubRepoAccess(
+    installation.id,
+    owner,
+    repoName,
+  );
+
+  if (!hasAccess) {
+    return {
+      success: false,
+      error: "Access Denied",
+    };
+  }
 
   const { data: repo, error: repoError } = await client
     .from("repositories")
@@ -240,7 +301,9 @@ export async function updateRepoSettings(
   return { success: true, data: repo as Repo };
 }
 
-export async function deleteRepo(repoId: string): Promise<ActionResult<void>> {
+export async function deleteRepo(
+  repoId: string,
+): Promise<ActionResult<{ organizationId: string }>> {
   const client = await createClient();
 
   const {
@@ -251,6 +314,22 @@ export async function deleteRepo(repoId: string): Promise<ActionResult<void>> {
     return { success: false, error: "User not authenticated!" };
   }
 
+  // Fetch the organization_id before deleting
+  const { data: repo, error: repoError } = await client
+    .from("repositories")
+    .select("organization_id")
+    .eq("id", repoId)
+    .single();
+
+  if (repoError) {
+    console.error(repoError);
+    return { success: false, error: repoError.message };
+  }
+
+  if (!repo) {
+    return { success: false, error: "Repository not found" };
+  }
+
   const { error } = await client.from("repositories").delete().eq("id", repoId);
 
   if (error) {
@@ -258,7 +337,7 @@ export async function deleteRepo(repoId: string): Promise<ActionResult<void>> {
     return { success: false, error: error.message };
   }
 
-  return { success: true, data: undefined };
+  return { success: true, data: { organizationId: repo.organization_id } };
 }
 
 export async function triggerReindex(
@@ -661,4 +740,66 @@ export async function createMessage(
     .eq("id", conversationId);
 
   return { success: true, data: message as ConversationMessage };
+}
+
+export async function indexRepository(
+  repoId: string,
+): Promise<ActionResult<void>> {
+  const client = await createClient();
+
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated!" };
+  }
+
+  const { data: installation, error: installationError } = await client
+    .from("github_installations")
+    .select("*")
+    .eq("installed_by", user.id)
+    .single();
+
+  if (!installation || installationError) {
+    return { success: false, error: "Github App Installation not found!" };
+  }
+
+  //fetch repo
+
+  const repoResult = await getRepoWithStatus(repoId);
+
+  if (!repoResult.success) {
+    return { success: false, error: repoResult.error };
+  }
+
+  const repoUrl = repoResult.data.repo_url;
+  const installationId = installation.installation_id;
+
+  //TO-DO: CALL THE BACKEND TO START INDEXING
+
+  //body: {
+  //  repoUrl: ,
+  //  installationId: installation.id,
+  //}
+
+  //replace hardcoded value with result from calling the backend
+  const success = false;
+
+  if (!success) {
+    return { success: false, error: "Indexing failed!" };
+  }
+
+  //mark the repository as indexing in supabase
+  const { error } = await client
+    .from("repositories")
+    .update({ index_status: "indexing" })
+    .eq("id", repoId);
+
+  if (error) {
+    console.error(error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: undefined };
 }

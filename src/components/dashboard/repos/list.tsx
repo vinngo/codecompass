@@ -39,7 +39,7 @@ export function RepoList({ organizationId }: RepoListProps) {
     //where i'm gonna add the empty
     // for /dashboard/new/${id} , figure out how to get the id
     return (
-      <div className="flex justify-center items-center scale-150 mt-80">
+      <div className="flex justify-center items-center">
         <Empty
           title="You Have No Repositories"
           description="Index a repository to get started"
