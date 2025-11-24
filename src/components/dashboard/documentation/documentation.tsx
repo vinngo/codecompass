@@ -55,6 +55,9 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
   const selectVersion = useDocumentationStore((state) => state.selectVersion);
   const isIndexing = useDocumentationStore((state) => state.isIndexing);
   const setIsIndexing = useDocumentationStore((state) => state.setIsIndexing);
+  const setSelectedVersionInChat = useChatUIStore(
+    (state) => state.setSelectedVersion,
+  );
 
   /*This is a React anti-pattern. Replace with tanstack query later*/
   useEffect(() => {
@@ -63,9 +66,11 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
 
   useEffect(() => {
     if (selectedVersion !== null) {
+      // Sync the selected version to the chat store
+      setSelectedVersionInChat(selectedVersion);
       fetchDocumentation();
     }
-  }, [selectedVersion]);
+  }, [selectedVersion, setSelectedVersionInChat]);
 
   useEffect(() => {
     if (selectedFile) {

@@ -7,6 +7,7 @@ import ChatInput from "./chat-input";
 import AnswerPanel from "./answer-panel";
 import ChatEmptyState from "./chat-empty-state";
 import ModelSelector, { AVAILABLE_MODELS } from "./model-selector";
+import VersionSelector from "./version-selector";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getConversationMessages,
@@ -90,6 +91,7 @@ export default function ChatInterface() {
   const conversation = useChatUIStore((state) => state.conversation);
   const setConversation = useChatUIStore((state) => state.setConversation);
   const repoId = useChatUIStore((state) => state.repoId);
+  const selectedVersion = useChatUIStore((state) => state.selectedVersion);
   const hasSentInitialMessage = useRef(false);
 
   // Fetch messages for selected conversation
@@ -119,14 +121,18 @@ export default function ChatInterface() {
     // If no conversation exists, create one
     let currentConversation = conversation;
     if (!currentConversation && repoId) {
-      const result = await createConversation(repoId, userQuestion);
+      const result = await createConversation(
+        repoId,
+        userQuestion,
+        selectedVersion,
+      );
       if (result.success) {
         currentConversation = result.data;
         setConversation(currentConversation);
 
         // Invalidate conversations query to refresh the list
         queryClient.invalidateQueries({
-          queryKey: ["conversations", repoId],
+          queryKey: ["conversations", repoId, selectedVersion],
         });
       } else {
         console.error("Failed to create conversation:", result.error);
@@ -394,12 +400,15 @@ export default function ChatInterface() {
     <div className="flex h-[calc(100vh-64px)] bg-grey-950 text-grey-300">
       {/* Chat Column */}
       <div className="flex flex-col w-1/2 border-r border-grey-800">
-        {/* Header with Model Selector */}
+        {/* Header with Model and Version Selectors */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <ModelSelector
-            selectedModel={selectedModel}
-            onSelectModel={setSelectedModel}
-          />
+          <div className="flex items-center gap-3">
+            <ModelSelector
+              selectedModel={selectedModel}
+              onSelectModel={setSelectedModel}
+            />
+            <VersionSelector />
+          </div>
         </div>
 
         {showEmptyState ? (

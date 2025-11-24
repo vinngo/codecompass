@@ -1,14 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useEffect, useRef } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useDocumentationStore } from "@/lib/stores/useDocumentationStore";
+import VersionSelector from "@/components/dashboard/chat/version-selector";
 
 interface Page {
   id: string;
@@ -38,23 +31,11 @@ export function MainContent({
   const internalRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = externalRef || internalRef;
 
-  const selectedVersion = useDocumentationStore(
-    (state) => state.selectedVersion,
-  );
-  const availableVersions = useDocumentationStore(
-    (state) => state.availableVersions,
-  );
-  const selectVersion = useDocumentationStore((state) => state.selectVersion);
-
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo(0, 0);
     }
   }, [selectedFile, scrollContainerRef]);
-
-  const handleVersionChange = (version: string) => {
-    selectVersion(parseInt(version, 10));
-  };
 
   if (!selectedFile) {
     return (
@@ -78,21 +59,7 @@ export function MainContent({
       <div className="border-b border-grey-800 px-6 py-3 flex items-center justify-between">
         <div className="flex flex-row gap-5 items-center">
           <h1 className="text-xl font-bold">{selectedFile.title}</h1>
-          <Select
-            value={selectedVersion?.toString()}
-            onValueChange={handleVersionChange}
-          >
-            <SelectTrigger className="w-17 h-8 text-sm font-semibold">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {availableVersions.map((v) => (
-                <SelectItem key={v.version} value={v.version.toString()}>
-                  v{v.version}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <VersionSelector />
         </div>
         <button className="text-xs h-8 px-4 border border-grey-700 rounded hover:bg-grey-800 transition-colors flex items-center gap-2">
           <span>Relevant source files</span>

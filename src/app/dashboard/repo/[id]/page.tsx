@@ -6,6 +6,7 @@ import { RepoContextSetter } from "@/components/dashboard/repo-context-setter";
 import {
   getRepoWithStatus,
   getConversations,
+  getLatestDocumentation,
 } from "@/lib/services/repoService";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
@@ -40,13 +41,19 @@ export default async function RepoPage({
     .eq("id", repo.organization_id)
     .single();
 
+  // Fetch latest documentation version
+  const latestDocResult = await getLatestDocumentation(id);
+  const latestVersion = latestDocResult.success
+    ? latestDocResult.data.version
+    : null;
+
   // Prefetch conversations using TanStack Query
   const queryClient = new QueryClient();
 
   await queryClient.prefetchQuery({
-    queryKey: ["conversations", id],
+    queryKey: ["conversations", id, latestVersion],
     queryFn: async () => {
-      const result = await getConversations(id, 20);
+      const result = await getConversations(id, 20, latestVersion);
       if (!result.success) throw new Error(result.error);
       return result.data;
     },
@@ -65,7 +72,7 @@ export default async function RepoPage({
             { label: repo.name },
           ]}
         />
-        <RepoContextSetter repoId={repo.id} />
+        <RepoContextSetter repoId={repo.id} version={latestVersion} />
         {/* Documentation Viewer - Main content */}
         <div className="flex-1 overflow-hidden">
           <DocumentationViewer repoId={repo.id} />
