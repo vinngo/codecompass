@@ -13,58 +13,6 @@ export async function GET(request: Request) {
     const { error, data } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      const provider = data.session.user.app_metadata.provider;
-      const providerToken = data.session.provider_token;
-
-      if (
-        provider &&
-        providerToken &&
-        (provider === "github" || provider === "gitlab")
-      ) {
-        try {
-          // Check if token already exists for this user+provider
-          const { data: existingToken } = await supabase
-            .from("git_provider_tokens")
-            .select("id")
-            .eq("user_id", data.session.user.id)
-            .eq("provider", provider)
-            .maybeSingle();
-
-          if (existingToken) {
-            // Update existing token
-            const { error: updateError } = await supabase
-              .from("git_provider_tokens")
-              .update({
-                access_token: providerToken,
-                token_type: "bearer",
-                scope: null,
-              })
-              .eq("id", existingToken.id);
-
-            if (updateError) {
-              console.error(`Failed to update ${provider} token:`, updateError);
-            }
-          } else {
-            // Insert new token
-            const { error: insertError } = await supabase
-              .from("git_provider_tokens")
-              .insert({
-                user_id: data.session.user.id,
-                provider: provider,
-                access_token: providerToken,
-                token_type: "bearer",
-                scope: null,
-              });
-
-            if (insertError) {
-              console.error(`Failed to insert ${provider} token:`, insertError);
-            }
-          }
-        } catch (error) {
-          console.error(`Failed to store ${provider} token:`, error);
-        }
-      }
-
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
 
