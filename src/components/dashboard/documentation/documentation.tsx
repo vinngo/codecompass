@@ -18,7 +18,14 @@ import {
 } from "@/components/ui/dialog";
 import { Empty } from "@/components/ui/empty";
 import { useChatUIStore } from "@/lib/stores/useChatUIStore";
-import { indexRepository, getDocPages } from "@/lib/services/repoService";
+import { useDocumentationStore } from "@/lib/stores/useDocumentationStore";
+import {
+  indexRepository,
+  getDocPages,
+  getDocumentationVersions,
+  getDocPagesForVersion,
+  getRepoWithStatus,
+} from "@/lib/services/repoService";
 import { motion } from "framer-motion";
 
 export default function DocumentationViewer({ repoId }: { repoId: string }) {
@@ -34,16 +41,31 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
   const [isFileTreeOpen, setIsFileTreeOpen] = useState(false);
   const [isTocOpen, setIsTocOpen] = useState(false);
   const [error, setError] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
   const mainContentScrollRef = useRef<HTMLDivElement>(null);
   const setHasDocumentation = useChatUIStore(
     (state) => state.setHasDocumentation,
   );
 
+  const selectedVersion = useDocumentationStore(
+    (state) => state.selectedVersion,
+  );
+  const setAvailableVersions = useDocumentationStore(
+    (state) => state.setAvailableVersions,
+  );
+  const selectVersion = useDocumentationStore((state) => state.selectVersion);
+  const isIndexing = useDocumentationStore((state) => state.isIndexing);
+  const setIsIndexing = useDocumentationStore((state) => state.setIsIndexing);
+
   /*This is a React anti-pattern. Replace with tanstack query later*/
   useEffect(() => {
-    fetchDocumentation();
+    fetchVersions();
   }, []);
+
+  useEffect(() => {
+    if (selectedVersion !== null) {
+      fetchDocumentation();
+    }
+  }, [selectedVersion]);
 
   useEffect(() => {
     if (selectedFile) {
@@ -52,11 +74,69 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
     }
   }, [selectedFile]);
 
+  const fetchVersions = async () => {
+    try {
+      // Check if repository is still indexing
+      const repoResult = await getRepoWithStatus(repoId);
+
+      if (!repoResult.success) {
+        console.error("Error fetching repo status:", repoResult.error);
+        return;
+      }
+
+      // Don't fetch documentation if still indexing
+      if (repoResult.data.index_status === "indexing") {
+        console.log("Repository is still indexing, skipping version fetch");
+        setIsIndexing(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // If we get here, indexing is complete
+      setIsIndexing(false);
+
+      const result = await getDocumentationVersions(repoId);
+
+      if (!result.success) {
+        console.error("Error fetching versions:", result.error);
+        return;
+      }
+
+      // If no documentation versions exist, the repo has never been indexed
+      if (result.data.length === 0) {
+        console.log("No documentation versions found");
+        setIsIndexing(false);
+        setIsLoading(false);
+        return;
+      }
+
+      const versions = result.data.map((doc) => ({
+        version: doc.version ?? 0,
+        createdAt: doc.created_at,
+        updatedAt: doc.updated_at,
+      }));
+
+      setAvailableVersions(versions);
+
+      // Auto-select the latest version
+      if (versions.length > 0) {
+        selectVersion(versions[0].version);
+      }
+    } catch (error) {
+      console.error("Error fetching versions:", error);
+    }
+  };
+
   const fetchDocumentation = async () => {
     try {
       setIsLoading(true);
 
-      const result = await getDocPages(repoId);
+      if (selectedVersion === null) {
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await getDocPagesForVersion(repoId, selectedVersion);
 
       if (!result.success) {
         console.error("Error fetching documentation:", result.error);
@@ -130,39 +210,58 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
     });
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     try {
       setError("");
-      /*
-        server action: call the backend to reindex the codebase and update status in postgres
-      */
+      setIsIndexing(true);
+
+      const result = await indexRepository(repoId);
+
+      if (!result.success) {
+        setError(result.error);
+        setIsIndexing(false);
+        return;
+      }
+
+      // Clear client-side documentation state
+      setFileTree([]);
+      setSelectedFile(null);
+      setExpandedNodes(new Set());
+      setHeadings([]);
+      setHasDocumentation(false);
 
       setShowRefreshModal(false);
+      // Keep isIndexing true - it will be cleared when fetchVersions detects completion
+
+      // Refetch versions to include the new one
+      await fetchVersions();
     } catch (e) {
-      setError("could not refresh:" + e);
+      setError("Could not refresh: " + e);
+      setIsIndexing(false);
     }
   };
 
   const handleGenerate = async () => {
     try {
       setError("");
-      setIsGenerating(true);
+      setIsIndexing(true);
 
       const result = await indexRepository(repoId);
 
       if (!result.success) {
         setError(result.error);
-        setIsGenerating(false);
+        setIsIndexing(false);
         return;
       }
 
       setShowGenerateModal(false);
-      setIsGenerating(false);
-      // Optionally refetch documentation after indexing starts
-      await fetchDocumentation();
+      // Keep isIndexing true - it will be cleared when fetchVersions detects completion
+
+      // Refetch versions to include the new one
+      await fetchVersions();
     } catch (e) {
       setError("Could not generate documentation: " + e);
-      setIsGenerating(false);
+      setIsIndexing(false);
     }
   };
 
@@ -170,6 +269,33 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-gray-400">Loading documentation...</div>
+      </div>
+    );
+  }
+
+  if (isIndexing) {
+    return (
+      <div className="flex h-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <Loader2 className="h-12 w-12 text-primary" />
+          </motion.div>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">Indexing Repository</h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Your codebase is being indexed. This may take a while depending on
+              the size of your repository. You can safely navigate away from
+              this page.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -208,16 +334,16 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
                 variant="outline"
                 onClick={() => setShowGenerateModal(false)}
                 className="w-full sm:w-auto"
-                disabled={isGenerating}
+                disabled={isIndexing}
               >
                 Cancel
               </Button>
               <Button
                 className="w-full sm:w-auto"
                 onClick={handleGenerate}
-                disabled={isGenerating}
+                disabled={isIndexing}
               >
-                {isGenerating ? (
+                {isIndexing ? (
                   <div className="flex items-center">
                     <motion.div
                       animate={{ rotate: 360 }}
@@ -302,8 +428,9 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
           <DialogHeader>
             <DialogTitle>Refresh this wiki</DialogTitle>
             <DialogDescription>
-              This action will reindex your codebase. Documentation and chat
-              will be unavailable for a short time.
+              This action will reindex your codebase and create a new version.
+              The process may take a while depending on the size of your
+              repository.
             </DialogDescription>
           </DialogHeader>
           {error && (
@@ -312,8 +439,37 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
             </div>
           )}
           <DialogFooter>
-            <Button className="w-full sm:w-auto" onClick={handleRefresh}>
-              Refresh
+            <Button
+              variant="outline"
+              onClick={() => setShowRefreshModal(false)}
+              className="w-full sm:w-auto"
+              disabled={isIndexing}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-full sm:w-auto"
+              onClick={handleRefresh}
+              disabled={isIndexing}
+            >
+              {isIndexing ? (
+                <div className="flex items-center">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    className="mr-2"
+                  >
+                    <Loader2 className="h-4 w-4" />
+                  </motion.div>
+                  Reindexing...
+                </div>
+              ) : (
+                "Refresh"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
