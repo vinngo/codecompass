@@ -523,7 +523,7 @@ export async function getDocPages(
   }
 
   const { data: pages, error } = await client
-    .from("doc_pages")
+    .from("pages")
     .select("*")
     .eq("documentation_id", documentation.id)
     .order("order_index", { ascending: true });
@@ -868,43 +868,37 @@ export async function indexRepository(
   const repoUrl = repoResult.data.repo_url;
   const installationId = installation.installation_id;
 
-  console.log(repoUrl, installationId);
+  //mark the repository as indexing in supabase first
+  const { error: updateError } = await client
+    .from("repositories")
+    .update({ index_status: "indexing" })
+    .eq("id", repoId);
 
-  //TO-DO: CALL THE BACKEND TO START INDEXING
-  const response = await fetch(`${process.env.BACKEND_URL}/repos/index`, {
+  if (updateError) {
+    console.error(updateError);
+    return { success: false, error: updateError.message };
+  }
+
+  // Call the backend to start indexing (fire-and-forget)
+  // Don't await or throw errors since this is a long-running operation
+  fetch(`${process.env.BACKEND_URL}/repos/index`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       repo_url: repoUrl,
+      repo_id: repoId,
+      user_id: user.id,
       installation_id: installationId,
       branch: "main",
     }),
+  }).catch((error) => {
+    // Log the error but don't fail the request
+    console.error("Indexing request failed:", error);
+    // The backend should handle updating the repo status on failure
   });
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      return {
-        success: false,
-        error:
-          "Repository not found. Have you installed CodeCompass app on your repository?",
-      };
-    }
-
-    return { success: false, error: `Indexing failed: ${response.statusText}` };
-  }
-
-  //mark the repository as indexed in supabase
-  const { error } = await client
-    .from("repositories")
-    .update({ index_status: "indexed" })
-    .eq("id", repoId);
-
-  if (error) {
-    console.error(error);
-    return { success: false, error: error.message };
-  }
-
+  // Return success immediately - the indexing will happen in the background
   return { success: true, data: undefined };
 }
