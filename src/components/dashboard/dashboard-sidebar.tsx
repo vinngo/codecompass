@@ -48,7 +48,7 @@ export function DashboardSidebar() {
         return (
           <>
             <SidebarItem
-              icon={<Building2 className="h-5 w-5" />}
+              icon={<Building2 className="h-4.5 w-4.5" />}
               label="Organizations"
               action={() => router.push(`/dashboard/organizations`)}
             />
@@ -59,19 +59,19 @@ export function DashboardSidebar() {
         return (
           <>
             <SidebarItem
-              icon={<FolderCode className="h-5 w-5" />}
+              icon={<FolderCode className="h-4.5 w-4.5" />}
               label="Repositories"
               action={() => router.push(`/dashboard/org/${currentContext.id}`)}
             />
             <SidebarItem
-              icon={<Users className="h-5 w-5" />}
+              icon={<Users className="h-4.5 w-4.5" />}
               label="Team"
               action={() =>
                 router.push(`/dashboard/org/${currentContext.id}/team`)
               }
             />
             <SidebarItem
-              icon={<Settings className="h-5 w-5" />}
+              icon={<Settings className="h-4.5 w-4.5" />}
               label="Settings"
               action={() =>
                 router.push(`/dashboard/org/${currentContext.id}/settings`)
@@ -86,9 +86,9 @@ export function DashboardSidebar() {
             <SidebarItem
               icon={
                 chatExpanded ? (
-                  <BookOpen className="h-5 w-5" />
+                  <BookOpen className="h-4.5 w-4.5" />
                 ) : (
-                  <MessageSquare className="h-5 w-5" />
+                  <MessageSquare className="h-4.5 w-4.5" />
                 )
               }
               label={chatExpanded ? "Documentation" : "Chat"}
@@ -104,7 +104,7 @@ export function DashboardSidebar() {
 
             {chatExpanded && (
               <SidebarItem
-                icon={<MessageSquarePlus className="h-5 w-5" />}
+                icon={<MessageSquarePlus className="h-4.5 w-4.5" />}
                 label="New Message"
                 action={() => {
                   const { startNewConversation } = useChatUIStore.getState();
@@ -115,7 +115,7 @@ export function DashboardSidebar() {
 
             {chatExpanded && <ConversationPanel />}
             <SidebarItem
-              icon={<Settings className="h-5 w-5" />}
+              icon={<Settings className="h-4.5 w-4.5" />}
               label="Settings"
               action={() =>
                 router.push(`/dashboard/repo/${currentContext.id}/settings`)
@@ -128,12 +128,12 @@ export function DashboardSidebar() {
         return (
           <>
             <SidebarItem
-              icon={<Building2 className="h-5 w-5" />}
+              icon={<Building2 className="h-4.5 w-4.5" />}
               label="Organizations"
               action={() => router.push("/dashboard/organizations")}
             />
             <SidebarItem
-              icon={<Settings className="h-5 w-5" />}
+              icon={<Settings className="h-4.5 w-4.5" />}
               label="Settings"
               action={() => router.push("/dashboard/organizations")}
             />

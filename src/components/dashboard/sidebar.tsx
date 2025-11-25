@@ -75,9 +75,16 @@ export function SidebarItem({
         {icon}
       </div>
       {isExpanded && (
-        <span className="text-sm text-foreground truncate whitespace-nowrap">
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          whileHover={disabled ? {} : { x: 4 }}
+          transition={{ duration: 0.3 }}
+          className="text-sm text-foreground truncate whitespace-nowrap"
+        >
           {label}
-        </span>
+        </motion.span>
       )}
     </motion.div>
   );
@@ -108,10 +115,24 @@ export function SidebarDropdownItem({
           </div>
           {sideBarExpanded && (
             <>
-              <span className="text-sm text-foreground truncate whitespace-nowrap flex-1">
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                whileHover={{ x: 4 }}
+                className="text-sm text-foreground truncate whitespace-nowrap flex-1"
+              >
                 {label}
-              </span>
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+              </motion.span>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+              </motion.div>
             </>
           )}
         </div>

@@ -12,10 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Copy, Check } from "lucide-react";
 import { useState } from "react";
 
-//@ts-expect-error react-syntax highligher SHOULD be installed
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
-//@ts-expect-error react-syntax highligher SHOULD be installed
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export default function CodeSnippet({
