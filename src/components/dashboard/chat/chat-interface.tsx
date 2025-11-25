@@ -385,9 +385,12 @@ export default function ChatInterface() {
   useEffect(() => {
     if (initialMessage && !hasSentInitialMessage.current) {
       hasSentInitialMessage.current = true;
+      // Clear any existing conversation to start fresh
+      setConversation(null);
+      // Send the initial message
       sendMessage(initialMessage);
     }
-  }, [initialMessage]);
+  }, [initialMessage, setConversation]);
 
   // Show empty state when there are no messages and no initial message
   const showEmptyState =
