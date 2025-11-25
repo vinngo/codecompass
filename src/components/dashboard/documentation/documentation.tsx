@@ -5,6 +5,9 @@ import { Menu, List, FileText, Loader2 } from "lucide-react";
 import { FileTreeSidebar } from "./file-tree";
 import { MainContent } from "./main-content";
 import { TableOfContentsSidebar } from "./table-of-contents";
+import { FileTreeSkeleton } from "./file-tree-skeleton";
+import { MainContentSkeleton } from "./main-content-skeleton";
+import { TableOfContentsSkeleton } from "./table-of-contents-skeleton";
 import { Page, FileTreeNode, Heading } from "./types";
 import { buildFileTree, extractHeadings } from "./utils";
 import { Button } from "@/components/ui/button";
@@ -272,8 +275,10 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-gray-400">Loading documentation...</div>
+      <div className="flex bg-background h-full">
+        <FileTreeSkeleton />
+        <MainContentSkeleton />
+        <TableOfContentsSkeleton />
       </div>
     );
   }
