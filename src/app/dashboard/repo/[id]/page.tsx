@@ -74,15 +74,15 @@ export default async function RepoPage({
         />
         <RepoContextSetter repoId={repo.id} version={latestVersion} />
         {/* Documentation Viewer - Main content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden relative">
           <DocumentationViewer repoId={repo.id} />
+
+          {/* Chat Bubble - Floating input (shows when chat is minimized) */}
+          <ChatBubble />
+
+          {/* Chat Overlay - Independent layer (shows when chat is expanded) */}
+          <ChatOverlay />
         </div>
-
-        {/* Chat Bubble - Floating input (shows when chat is minimized) */}
-        <ChatBubble />
-
-        {/* Chat Overlay - Independent layer (shows when chat is expanded) */}
-        <ChatOverlay />
       </div>
     </HydrationBoundary>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { Send } from "lucide-react";
 import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 
@@ -32,7 +33,11 @@ export default function ChatBubble() {
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] sm:w-[400px] md:w-[500px] lg:w-[600px] xl:w-[700px]">
-      <div className="w-full mx-auto">
+      <motion.div
+        layoutId="chat-container"
+        className="w-full mx-auto"
+        style={{ borderRadius: 8 }}
+      >
         <div className="relative">
           <textarea
             placeholder="Ask about this codebase"
@@ -53,7 +58,7 @@ export default function ChatBubble() {
             <Send size={20} />
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
