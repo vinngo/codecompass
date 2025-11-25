@@ -932,7 +932,7 @@ export async function createMessage(
   }
 
   const { data: message, error } = await client
-    .from("conversation_messages")
+    .from("messages")
     .insert({
       conversation_id: conversationId,
       role,
