@@ -5,6 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useRouter, useParams } from "next/navigation";
 import {
   updateRepoSettings,
@@ -23,6 +31,8 @@ export default function RepoSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [repoUrl, setRepoUrl] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const router = useRouter();
@@ -97,13 +107,12 @@ export default function RepoSettings() {
     router.push(`/dashboard/repo/${repoId}`);
   };
 
-  const handleDelete = async () => {
-    const confirmDelete = confirm(
-      "Are you sure you want to delete this repository? This cannot be undone.",
-    );
+  const handleDeleteClick = () => {
+    setDeleteConfirmationText("");
+    setShowDeleteDialog(true);
+  };
 
-    if (!confirmDelete) return;
-
+  const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     setError("");
 
@@ -112,20 +121,12 @@ export default function RepoSettings() {
     if (!result.success) {
       setError(result.error);
       setIsDeleting(false);
+      setShowDeleteDialog(false);
       return;
     }
 
     router.push(`/dashboard/org/${result.data.organizationId}`);
   };
-
-  if (isLoading) {
-    return (
-      <div className="max-w-2xl mx-auto space-y-8 py-12">
-        <h1 className="text-3xl font-bold">Repository Settings</h1>
-        <p>Loading...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 py-8 px-4">
@@ -170,7 +171,7 @@ export default function RepoSettings() {
             </Label>
             <Input
               id="repoName"
-              value={repoName}
+              value={isLoading ? "Loading..." : repoName}
               onChange={(e) => setRepoName(e.target.value)}
               placeholder="Enter repository name"
               disabled={isSaving}
@@ -186,7 +187,7 @@ export default function RepoSettings() {
               </Label>
               <Input
                 id="repoUrl"
-                value={repoUrl}
+                value={isLoading ? "Loading..." : repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
                 placeholder="https://github.com/owner/repo"
                 disabled={isSaving}
@@ -220,7 +221,8 @@ export default function RepoSettings() {
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
-                Uploading a new .zip file will trigger re-indexing.
+                To see changes, you must manually request indexing after this
+                change.
               </p>
             </div>
           )}
@@ -254,14 +256,65 @@ export default function RepoSettings() {
           </div>
           <Button
             variant="destructive"
-            onClick={handleDelete}
+            onClick={handleDeleteClick}
             disabled={isDeleting}
             className="w-full sm:w-auto"
           >
-            {isDeleting ? "Deleting..." : "Delete Repository"}
+            Delete Repository
           </Button>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Repository</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this repository? This action
+              cannot be undone. All documentation and chat history will be
+              permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label
+                htmlFor="deleteConfirmation"
+                className="text-sm font-medium"
+              >
+                Type <span className="font-mono font-semibold">{repoName}</span>{" "}
+                to confirm
+              </Label>
+              <Input
+                id="deleteConfirmation"
+                value={deleteConfirmationText}
+                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                placeholder={repoName}
+                disabled={isDeleting}
+                className="h-10"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting || deleteConfirmationText !== repoName}
+              className="w-full sm:w-auto"
+            >
+              {isDeleting ? "Deleting..." : "Delete Repository"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
