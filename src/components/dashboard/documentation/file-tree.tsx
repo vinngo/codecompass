@@ -1,5 +1,6 @@
 import { JSX } from "react";
 import { Search, ChevronRight, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Page {
   id: string;
@@ -98,26 +99,33 @@ export function FileTreeSidebar({
             style={{ paddingLeft: `${level * 12 + 8}px` }}
           >
             {hasChildren ? (
-              <div
-                className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : "rotate-0"}`}
+              <motion.div
+                animate={{ rotate: isExpanded ? 90 : 0 }}
+                transition={{ duration: 0.2 }}
               >
                 <ChevronRight className="w-3 h-3 shrink-0" />
-              </div>
+              </motion.div>
             ) : (
               <div className="w-3" />
             )}
             <span className="truncate text-xs">{node.title}</span>
           </button>
           {hasChildren && (
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <div className="pt-1">
-                {renderFileTree(node.children, level + 1)}
-              </div>
-            </div>
+            <AnimatePresence initial={false}>
+              {isExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-1">
+                    {renderFileTree(node.children, level + 1)}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           )}
         </div>
       );
