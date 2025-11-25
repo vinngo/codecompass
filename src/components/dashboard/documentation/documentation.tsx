@@ -199,7 +199,6 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
       // Update chat UI store with documentation availability
       setHasDocumentation(pages.length > 0);
     } catch (error) {
-      console.error("Error fetching documentation:", error);
       setHasDocumentation(false);
     } finally {
       setIsLoading(false);

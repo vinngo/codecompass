@@ -665,13 +665,13 @@ export async function getLatestDocumentation(
     .limit(1)
     .single();
 
+  if (!documentation) {
+    return { success: false, error: "Documentation not found" };
+  }
+
   if (error) {
     console.error(error);
     return { success: false, error: error.message };
-  }
-
-  if (!documentation) {
-    return { success: false, error: "Documentation not found" };
   }
 
   return { success: true, data: documentation as Documentation };
@@ -703,7 +703,6 @@ export async function getDocPagesForVersion(
     .single();
 
   if (docError || !documentation) {
-    console.error(docError);
     return { success: false, error: "Documentation version not found" };
   }
 
