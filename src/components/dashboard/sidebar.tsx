@@ -79,6 +79,7 @@ export function SidebarItem({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          whileHover={disabled ? {} : { x: 4 }}
           transition={{ duration: 0.3 }}
           className="text-sm text-foreground truncate whitespace-nowrap"
         >
@@ -119,6 +120,7 @@ export function SidebarDropdownItem({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
+                whileHover={{ x: 4 }}
                 className="text-sm text-foreground truncate whitespace-nowrap flex-1"
               >
                 {label}
