@@ -85,13 +85,17 @@ export function DashboardSidebar() {
           <>
             <SidebarItem
               icon={
-                chatExpanded ? (
+                chatExpanded || pathname.includes("/settings") ? (
                   <BookOpen className="h-4.5 w-4.5" />
                 ) : (
                   <MessageSquare className="h-4.5 w-4.5" />
                 )
               }
-              label={chatExpanded ? "Documentation" : "Chat"}
+              label={
+                chatExpanded || pathname.includes("/settings")
+                  ? "Documentation"
+                  : "Chat"
+              }
               action={() => {
                 // Navigate to repo page if not already there
                 if (pathname !== `/dashboard/repo/${currentContext.id}`) {
@@ -99,10 +103,9 @@ export function DashboardSidebar() {
                 }
                 toggle();
               }}
-              disabled={!hasDocumentation}
+              disabled={!hasDocumentation && !pathname.includes("/settings")}
             />
-
-            {chatExpanded && (
+            {!pathname.includes("/settings") && chatExpanded && (
               <SidebarItem
                 icon={<MessageSquarePlus className="h-4.5 w-4.5" />}
                 label="New Message"
@@ -113,7 +116,9 @@ export function DashboardSidebar() {
               />
             )}
 
-            {chatExpanded && <ConversationPanel />}
+            {!pathname.includes("/settings") && chatExpanded && (
+              <ConversationPanel />
+            )}
             <SidebarItem
               icon={<Settings className="h-4.5 w-4.5" />}
               label="Settings"
