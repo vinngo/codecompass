@@ -159,7 +159,7 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
                 <SelectGroup>
                   <SelectLabel>Select a Type</SelectLabel>
                   <SelectItem value="local">Local</SelectItem>
-                  <SelectItem value="github">Github</SelectItem>
+                  <SelectItem value="github">GitHub</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -168,7 +168,7 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
               <div className="flex flex-col gap-3 py-2">
                 <Separator />
                 <Field className="py-2">
-                  <FieldLabel htmlFor="github-url">Github URL</FieldLabel>
+                  <FieldLabel htmlFor="github-url">GitHub URL</FieldLabel>
                   <Input
                     id="github-url"
                     name="github-url"
@@ -178,7 +178,7 @@ export function NewProjectForm({ orgId }: NewProjectFormProps) {
                     className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                   />
                   <FieldDescription>
-                    Enter the URL of the Github repository.
+                    Enter the URL of the GitHub repository.
                   </FieldDescription>
                 </Field>
               </div>

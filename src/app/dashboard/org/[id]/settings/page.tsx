@@ -56,7 +56,7 @@ export default function OrganizationSettings() {
 
       // Optional: confirmation guard
       const confirmDelete = confirm(
-        "Are you sure you want to delete this organizatioin? This cannot be undone."
+        "Are you sure you want to delete this organization? This cannot be undone.",
       );
       if (!confirmDelete) return;
 
@@ -89,7 +89,7 @@ export default function OrganizationSettings() {
               id="orgName"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
-              placeholder="Enter organization name"
+              placeholder="Edit organization name"
             />
           </div>
           <Button onClick={handleSave}>Save</Button>
