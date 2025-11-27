@@ -72,7 +72,7 @@ export default function LoginPage() {
               >
                 <div className="flex flex-row gap-3">
                   <Github />
-                  <p>Continue with Github</p>
+                  <p>Continue with GitHub</p>
                 </div>
               </Button>
               <Button
@@ -82,7 +82,7 @@ export default function LoginPage() {
               >
                 <div className="flex flex-row gap-3">
                   <Gitlab />
-                  <p>Continue with Gitlab</p>
+                  <p>Continue with GitLab</p>
                 </div>
               </Button>
             </div>
