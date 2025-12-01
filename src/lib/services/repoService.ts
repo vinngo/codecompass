@@ -9,7 +9,10 @@ import {
   ConversationMessage,
 } from "@/app/types/supabase";
 import { ActionResult } from "@/app/types/action";
-import { verifyGithubRepoAccess } from "./gitProviderService";
+import {
+  verifyGithubRepoAccess,
+  verifyGitLabRepoAccess,
+} from "./gitProviderService";
 
 // Helper function to parse GitHub URLs
 function parseGitHubUrl(url: string): { owner: string; repo: string } {
@@ -29,6 +32,55 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } {
     if (url.startsWith("git@github.com:")) {
       const parts = url.replace("git@github.com:", "").split("/");
       return { owner: parts[0], repo: parts[1] };
+    }
+
+    return { owner: "", repo: "" };
+  } catch (error) {
+    return { owner: "", repo: "" };
+  }
+}
+
+// Helper function to parse GitLab URLs
+function parseGitLabUrl(url: string): { owner: string; repo: string } {
+  try {
+    // Handle multiple formats:
+    // - https://gitlab.com/owner/repo
+    // - https://gitlab.com/owner/subgroup/repo
+    // - https://gitlab.com/owner/repo.git
+    // - git@gitlab.com:owner/repo.git
+    // - Self-hosted: https://gitlab.example.com/owner/repo
+
+    url = url.trim().replace(/\.git$/, "");
+
+    // Handle HTTPS URLs (gitlab.com or self-hosted)
+    if (url.includes("gitlab.com/") || /gitlab\.[^/]+\//.test(url)) {
+      // Extract the path after the domain
+      const match = url.match(/gitlab[^/]*\/(.+)/);
+      if (match) {
+        const pathParts = match[1].split("/");
+        // GitLab supports nested groups, so we need to handle:
+        // - owner/repo (2 parts)
+        // - owner/subgroup/repo (3+ parts)
+        if (pathParts.length >= 2) {
+          // Take everything except the last part as owner/group
+          const repo = pathParts[pathParts.length - 1];
+          const owner = pathParts.slice(0, -1).join("/");
+          return { owner, repo };
+        }
+      }
+    }
+
+    // Handle SSH URLs
+    if (url.startsWith("git@gitlab.com:") || /git@gitlab\.[^:]+:/.test(url)) {
+      const match = url.match(/git@gitlab[^:]*:(.+)/);
+      if (match) {
+        const pathParts = match[1].split("/");
+        if (pathParts.length >= 2) {
+          const repo = pathParts[pathParts.length - 1];
+          const owner = pathParts.slice(0, -1).join("/");
+          return { owner, repo };
+        }
+      }
     }
 
     return { owner: "", repo: "" };
@@ -131,6 +183,86 @@ export async function createRepoViaGithub(
   }
 
   return { success: true, data: repo as Repo };
+}
+
+export async function createRepoViaGitlab(
+  formData: FormData,
+  orgId: string,
+): Promise<ActionResult<Repo | undefined>> {
+  const client = await createClient();
+
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "User not authenticated!" };
+  }
+
+  const name = formData.get("name") as string;
+  const provider = formData.get("type") as string;
+  const url = formData.get("gitlab-url") as string;
+
+  // Validate inputs
+  if (!name || name.trim() === "") {
+    return { success: false, error: "Repository name is required" };
+  }
+
+  if (!url || url.trim() === "") {
+    return { success: false, error: "GitLab URL is required" };
+  }
+
+  const { data: installation } = await client
+    .from("gitlab_installations")
+    .select("*")
+    .eq("installed_by", user.id)
+    .single();
+
+  if (!installation) {
+    return { success: false, error: "Installation Needed" };
+  }
+
+  const { owner, repo: repoName } = parseGitLabUrl(url);
+
+  //verify access
+  const hasAccess = await verifyGitLabRepoAccess(
+    installation.access_token,
+    owner,
+    repoName,
+  );
+
+  if (!hasAccess) {
+    if (installation.access_token) {
+      return {
+        success: false,
+        error: "Access required!",
+      };
+    }
+
+    return {
+      success: false,
+      error: "Access denied!",
+    };
+  }
+
+  const { data: repo, error: repoError } = await client
+    .from("repositories")
+    .insert({
+      name,
+      provider,
+      repo_url: url,
+      organization_id: orgId,
+      indexed_by: user.id,
+      index_status: "not indexed",
+    })
+    .select()
+    .single();
+
+  if (repoError) {
+    return { success: false, error: repoError.message };
+  }
+
+  return { success: true, data: repo };
 }
 
 export async function createRepoViaLocalFile(
@@ -271,6 +403,8 @@ export async function getRepoWithStatus(
 
   return { success: true, data: repo as Repo };
 }
+
+
 
 type UpdateData = {
   name?: string;
