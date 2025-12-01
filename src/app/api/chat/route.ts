@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { query } = await request.json();
+    //TODO: use the model parameter when the official list of models comes out
+    const { query, repoId, conversation, model } = await request.json();
 
     // Simple proxy to backend - just forward the request
     const response = await fetch(
@@ -25,8 +26,10 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           userQuery: query,
-          conversationHistory: [],
+          conversationHistory: conversation,
           selectedModel: "phi3:latest",
+          userId: user.id,
+          repoId,
         }),
       },
     );

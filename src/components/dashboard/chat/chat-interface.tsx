@@ -189,7 +189,9 @@ export default function ChatInterface() {
         },
         body: JSON.stringify({
           query: userQuestion,
-          model: selectedModel.id,
+          model: selectedModel.name,
+          conversation: conversationMessages,
+          repoId,
         }),
       });
 
