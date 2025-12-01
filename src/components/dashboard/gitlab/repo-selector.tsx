@@ -6,10 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import {
-  GitLabProject,
-  importGitLabProjects,
-} from "@/lib/services/gitProviderService";
+import { GitLabProject } from "@/app/types/gitlab";
+import { importGitLabRepositories } from "@/lib/actions/gitlab";
 import { Search, Gitlab } from "@geist-ui/icons";
 
 type GitLabRepoSelectorProps = {
@@ -59,7 +57,10 @@ export function GitLabRepoSelector({
       );
 
       // Import selected projects using server action
-      const result = await importGitLabProjects(selectedProjectsList, orgId);
+      const result = await importGitLabRepositories(
+        selectedProjectsList,
+        orgId,
+      );
 
       if (!result.success) {
         setError(result.error);
