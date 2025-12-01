@@ -4,6 +4,7 @@ import { githubApp } from "@/utils/github/app";
 import { createClient } from "@/utils/supabase/server";
 import { ActionResult } from "@/app/types/action";
 import { Repo } from "@/app/types/supabase";
+import type { GitLabProject } from "@/app/types/gitlab";
 
 export async function verifyGithubRepoAccess(
   installation_id: string,
@@ -52,17 +53,6 @@ export async function verifyGitLabRepoAccess(
     throw error;
   }
 }
-
-export type GitLabProject = {
-  id: number;
-  name: string;
-  path_with_namespace: string;
-  description: string | null;
-  web_url: string;
-  visibility: string;
-  default_branch: string;
-  last_activity_at: string;
-};
 
 export async function fetchGitLabProjects(
   access_token: string,
