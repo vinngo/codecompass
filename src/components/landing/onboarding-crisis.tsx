@@ -13,7 +13,7 @@ import {
 export default function OnboardingCrisis() {
   return (
     <div className="dark:bg-gray-900 flex flex-col w-full border-t border-border">
-      <div className="bg-gray-100 dark:bg-background border-x max-w-6xl border-border mx-auto sm:px-8 py-8 sm:py-12 md:py-16">
+      <div className="bg-gray-100 dark:bg-gray-900 border-x max-w-6xl border-border mx-auto sm:px-8 py-8 sm:py-12 md:py-16">
         <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">
           The Developer Onboarding Crisis
         </h2>
