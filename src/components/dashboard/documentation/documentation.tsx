@@ -58,6 +58,9 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
   const selectVersion = useDocumentationStore((state) => state.selectVersion);
   const isIndexing = useDocumentationStore((state) => state.isIndexing);
   const setIsIndexing = useDocumentationStore((state) => state.setIsIndexing);
+  const availableVersions = useDocumentationStore(
+    (state) => state.availableVersions,
+  );
   const setSelectedVersionInChat = useChatUIStore(
     (state) => state.setSelectedVersion,
   );
@@ -410,7 +413,11 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
         selectedFile={selectedFile}
         expandedNodes={expandedNodes}
         searchQuery={searchQuery}
-        lastIndexed={lastIndexed}
+        lastIndexed={
+          availableVersions.find(
+            (version) => version.version === selectedVersion,
+          )?.updatedAt ?? ""
+        }
         onSelectFile={setSelectedFile}
         onToggleExpanded={toggleExpanded}
         onSearchChange={setSearchQuery}

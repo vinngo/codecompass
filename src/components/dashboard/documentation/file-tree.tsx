@@ -1,6 +1,7 @@
 import { JSX } from "react";
 import { Search, ChevronRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatRelativeTime } from "@/lib/utils";
 
 interface Page {
   id: string;
@@ -170,7 +171,7 @@ export function FileTreeSidebar({
 
         <div className="p-3 border-b border-border">
           <div className="text-xs text-gray-500 mb-2">
-            Last indexed: {lastIndexed}
+            Last indexed: {formatRelativeTime(lastIndexed)}
           </div>
         </div>
 
