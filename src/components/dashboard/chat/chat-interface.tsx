@@ -507,9 +507,9 @@ export default function ChatInterface() {
   const showMessagesLoading = messagesLoading && !!conversation;
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-white dark:bg-grey-950 text-gray-900 dark:text-grey-300">
+    <div className="flex h-[calc(100vh-64px)] bg-white dark:bg-background text-gray-900 dark:text-gray-300">
       {/* Chat Column */}
-      <div className="flex flex-col w-1/2 border-r border-gray-200 dark:border-grey-800">
+      <div className="flex flex-col w-1/2 border-r border-gray-200 dark:border-gray-800">
         {/* Header with Model and Version Selectors */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-3">

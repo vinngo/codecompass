@@ -25,7 +25,7 @@ export default function ChatInput({
   };
 
   return (
-    <div className="border-t border-grey-800 bg-grey-900">
+    <div className="border-t dark:border-gray-800 bg-background">
       <div className="max-w-4xl mx-auto px-4 py-4">
         <div className="relative">
           <textarea
@@ -37,9 +37,9 @@ export default function ChatInput({
             }
             rows={2}
             disabled={disabled}
-            className="w-full bg-grey-800 text-grey-100 px-4 py-3 pr-12 rounded-lg border border-grey-700 focus:outline-none
+            className="w-full bg-background text-gray-100 px-4 py-3 pr-12 rounded-lg border dark:border-gray-700 focus:outline-none
                     focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 focus:shadow-[0_0_15px_rgba(20,184,166,0.3)]
-                    placeholder-grey-500 resize-none disabled:opacity-50 disabled:cursor-not-allowed
+                    placeholder-gray-500 resize-none disabled:opacity-50 disabled:cursor-not-allowed
                     transition-shadow duration-200"
           />
           <button
