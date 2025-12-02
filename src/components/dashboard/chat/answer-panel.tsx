@@ -22,10 +22,10 @@ interface AnswerPanelProps {
 
 export default function AnswerPanel({ conversationTurns }: AnswerPanelProps) {
   return (
-    <div className="flex-1 border-l border-grey-800 bg-grey-950 overflow-y-auto">
+    <div className="flex-1 border-l border-gray-200 dark:border-grey-800 bg-white dark:bg-grey-950 overflow-y-auto">
       <div className="px-6 py-4">
         {conversationTurns.length === 0 ? (
-          <div className="text-center text-grey-500 mt-12">
+          <div className="text-center text-gray-500 dark:text-grey-500 mt-12">
             <p className="text-sm mt-2">
               Relevant code snippets will appear here, grouped by your questions
             </p>
@@ -35,11 +35,13 @@ export default function AnswerPanel({ conversationTurns }: AnswerPanelProps) {
             {conversationTurns.map((turn) => (
               <div key={turn.id} className="space-y-3">
                 {/* Question Header */}
-                <div className="sticky top-0 bg-grey-950 py-2 border-b bg-background border-grey-800">
-                  <p className="text-sm text-grey-400 font-medium">
+                <div className="sticky top-0 bg-white dark:bg-grey-950 py-2 border-b border-gray-200 dark:border-grey-800">
+                  <p className="text-sm text-gray-700 dark:text-grey-400 font-medium">
                     {turn.userQuestion}
                   </p>
-                  <p className="text-xs text-grey-600 mt-1">{turn.timestamp}</p>
+                  <p className="text-xs text-gray-500 dark:text-grey-600 mt-1">
+                    {turn.timestamp}
+                  </p>
                 </div>
 
                 {/* Code Snippets for this question */}
@@ -55,7 +57,7 @@ export default function AnswerPanel({ conversationTurns }: AnswerPanelProps) {
                       />
                     ))
                   ) : (
-                    <p className="text-xs text-grey-600 italic">
+                    <p className="text-xs text-gray-500 dark:text-grey-600 italic">
                       No code snippets for this question
                     </p>
                   )}
