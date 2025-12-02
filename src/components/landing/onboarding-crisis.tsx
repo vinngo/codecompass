@@ -9,11 +9,12 @@ import {
   AlertTriangle,
   Minus,
 } from "lucide-react";
+import { SectionContainer } from "./section-container";
 
 export default function OnboardingCrisis() {
   return (
     <div className="dark:bg-gray-900 flex flex-col w-full border-t border-border">
-      <div className="bg-white dark:bg-gray-900 border-x max-w-6xl border-border mx-auto sm:px-8 py-8 sm:py-12 md:py-16">
+      <SectionContainer className="bg-white dark:bg-gray-900 !max-w-7xl">
         <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">
           The Developer Onboarding Crisis
         </h2>
@@ -247,7 +248,7 @@ export default function OnboardingCrisis() {
             </motion.div>
           </div>
         </div>
-      </div>
+      </SectionContainer>
     </div>
   );
 }

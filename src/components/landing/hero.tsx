@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern";
 import { cn } from "@/lib/utils";
+import { SectionContainer } from "./section-container";
 
 type HeroProps = {
   isAuthenticated: boolean;
@@ -13,7 +14,7 @@ type HeroProps = {
 export default function Hero({ isAuthenticated }: HeroProps) {
   return (
     <div className="dark:bg-gray-900 flex flex-col w-full items-center justify-center">
-      <div className="flex flex-col w-full border-x max-w-6xl border-border mx-auto">
+      <SectionContainer noPadding className="!max-w-7xl">
         {/* Hero Section - Full Screen */}
         <div className="relative min-h-screen w-full flex flex-col items-center justify-center gap-4 px-4 sm:px-6">
           <GridPattern
@@ -87,7 +88,7 @@ export default function Hero({ isAuthenticated }: HeroProps) {
             <Button variant="outline">Our Features</Button>
           </motion.div>
         </div>
-      </div>
+      </SectionContainer>
     </div>
   );
 }

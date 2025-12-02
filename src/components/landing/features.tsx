@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { SectionContainer } from "./section-container";
 
 export default function Features() {
   const [videoUrl, setVideoUrl] = useState<string>("");
@@ -29,7 +30,7 @@ export default function Features() {
 
   return (
     <div className="flex flex-col w-full border-t border-border">
-      <div className="bg-white dark:bg-gray-900 border-x max-w-6xl border-border mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
+      <SectionContainer className="bg-white dark:bg-gray-900 !max-w-7xl">
         {/* Video Demo Section */}
         <div className="mb-12 sm:mb-16 md:mb-24 mx-auto">
           <motion.div
@@ -365,7 +366,7 @@ export default function Features() {
             </motion.div>
           </div>
         </div>
-      </div>
+      </SectionContainer>
     </div>
   );
 }

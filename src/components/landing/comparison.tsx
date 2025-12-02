@@ -1,7 +1,9 @@
+import { SectionContainer } from "./section-container";
+
 export default function Comparison() {
   return (
     <div className="flex flex-col w-full border-t border-border">
-      <div className="bg-white dark:bg-gray-900 border-x max-w-6xl border-border mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
+      <SectionContainer className="bg-white dark:bg-gray-900 !max-w-7xl">
         <div
           id="comparison"
           className="mx-auto"
@@ -128,7 +130,7 @@ export default function Comparison() {
             </div>
           </div>
         </div>
-      </div>
+      </SectionContainer>
     </div>
   );
 }

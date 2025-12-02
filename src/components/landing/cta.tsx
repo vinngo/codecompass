@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { GridPattern } from "../ui/shadcn-io/grid-pattern";
 import { cn } from "@/lib/utils";
+import { SectionContainer } from "./section-container";
 
 type CTAProps = {
   isAuthenticated: boolean;
@@ -14,7 +15,7 @@ type CTAProps = {
 export default function CTA({ isAuthenticated }: CTAProps) {
   return (
     <div className="flex flex-col w-full border-t border-border">
-      <div className="relative border-x max-w-6xl border-border mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-24">
+      <SectionContainer className="relative !max-w-7xl !py-12 sm:!py-16 md:!py-24">
         <GridPattern
           width={20}
           height={20}
@@ -156,7 +157,7 @@ export default function CTA({ isAuthenticated }: CTAProps) {
             }}
           />
         </motion.div>
-      </div>
+      </SectionContainer>
     </div>
   );
 }
