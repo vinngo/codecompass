@@ -7,6 +7,7 @@ import {
   DocPage,
   Conversation,
   ConversationMessage,
+  CodeSnippet,
 } from "@/app/types/supabase";
 import { ActionResult } from "@/app/types/action";
 import {
@@ -403,8 +404,6 @@ export async function getRepoWithStatus(
 
   return { success: true, data: repo as Repo };
 }
-
-
 
 type UpdateData = {
   name?: string;
@@ -1087,6 +1086,68 @@ export async function createMessage(
     .eq("id", conversationId);
 
   return { success: true, data: message as ConversationMessage };
+}
+
+export async function saveCodeSnippets(
+  conversationId: string,
+  messageId: string,
+  snippets: Array<{ file: string; code: string }>,
+): Promise<ActionResult<CodeSnippet[]>> {
+  const supabase = await createClient();
+
+  const snippetsToInsert = snippets.map((snippet) => ({
+    conversation_id: conversationId,
+    message_id: messageId,
+    file_path: snippet.file,
+    code_content: snippet.code,
+    language: snippet.file.split(".").pop() || null,
+  }));
+
+  const { data, error } = await supabase
+    .from("code_snippets")
+    .insert(snippetsToInsert)
+    .select();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: data as CodeSnippet[] };
+}
+
+export async function getCodeSnippetsForConversation(
+  conversationId: string,
+): Promise<ActionResult<CodeSnippet[]>> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("code_snippets")
+    .select("*")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: data as CodeSnippet[] };
+}
+
+export async function deleteCodeSnippet(
+  snippetId: string,
+): Promise<ActionResult<null>> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("code_snippets")
+    .delete()
+    .eq("id", snippetId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: null };
 }
 
 export async function indexRepository(

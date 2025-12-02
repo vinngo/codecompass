@@ -92,3 +92,14 @@ export type GitHubInstallation = {
   created_at: string | null;
   updated_at: string | null;
 };
+
+export type CodeSnippet = {
+  id: string;
+  conversation_id: string;
+  message_id: string;
+  file_path: string;
+  code_content: string;
+  language: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
