@@ -347,7 +347,6 @@ export default function ChatInterface() {
         if (snippetsResponse.ok) {
           const snippetsData = await snippetsResponse.json();
           codeSnippets = snippetsData.snippets || [];
-          console.log("Fetched code snippets:", codeSnippets);
 
           // Save code snippets to database
           if (currentConversation && codeSnippets.length > 0) {
@@ -437,6 +436,11 @@ export default function ChatInterface() {
 
   // Load conversation messages and code snippets when they're fetched
   useEffect(() => {
+    // Wait for both queries to finish loading before building turns
+    if (messagesLoading || snippetsLoading) {
+      return;
+    }
+
     if (conversationMessages && conversationMessages.length > 0) {
       const loadedMessages: Message[] = conversationMessages.map((msg) => ({
         id: msg.id,
@@ -477,7 +481,12 @@ export default function ChatInterface() {
 
       setConversationTurns(turns);
     }
-  }, [conversationMessages, conversationCodeSnippets]);
+  }, [
+    conversationMessages,
+    conversationCodeSnippets,
+    messagesLoading,
+    snippetsLoading,
+  ]);
 
   // Auto-send initial message when component mounts
   useEffect(() => {
