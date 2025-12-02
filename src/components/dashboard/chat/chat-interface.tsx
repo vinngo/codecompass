@@ -13,7 +13,10 @@ import {
   getConversationMessages,
   createConversation,
   createMessage,
+  getCodeSnippetsForConversation,
+  saveCodeSnippets,
 } from "@/lib/services/repoService";
+import { CodeSnippet as DBCodeSnippet } from "@/app/types/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Message {
@@ -106,6 +109,20 @@ export default function ChatInterface() {
     enabled: !!conversation?.id,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
+
+  // Fetch code snippets for selected conversation
+  const { data: conversationCodeSnippets, isLoading: snippetsLoading } =
+    useQuery({
+      queryKey: ["codeSnippets", conversation?.id],
+      queryFn: async () => {
+        if (!conversation?.id) return [];
+        const result = await getCodeSnippetsForConversation(conversation.id);
+        if (!result.success) throw new Error(result.error);
+        return result.data;
+      },
+      enabled: !!conversation?.id,
+      staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    });
 
   const sendMessage = async (text: string) => {
     if (chatInputDisabled || !text.trim()) return;
@@ -310,14 +327,64 @@ export default function ChatInterface() {
         }
       }
 
-      // Update conversation turn with final state
+      // Fetch code snippets from backend
+      let codeSnippets: CodeSnippet[] = [];
+
+      try {
+        const snippetsResponse = await fetch("/api/chat/code-snippets", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: userQuestion,
+            response: accumulatedText,
+            repoId,
+            model: selectedModel.name,
+          }),
+        });
+
+        if (snippetsResponse.ok) {
+          const snippetsData = await snippetsResponse.json();
+          codeSnippets = snippetsData.snippets || [];
+
+          // Save code snippets to database
+          if (currentConversation && codeSnippets.length > 0) {
+            const saveResult = await saveCodeSnippets(
+              currentConversation.id,
+              assistantMessageId,
+              codeSnippets,
+            );
+
+            if (saveResult.success) {
+              // Update React Query cache with new snippets
+              queryClient.setQueryData<DBCodeSnippet[]>(
+                ["codeSnippets", currentConversation.id],
+                (old) => [...(old || []), ...saveResult.data],
+              );
+            } else {
+              console.error("Failed to save code snippets:", saveResult.error);
+            }
+          }
+        } else {
+          console.warn(
+            "Failed to fetch code snippets:",
+            snippetsResponse.statusText,
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching code snippets:", error);
+        // Continue gracefully if snippets fail
+      }
+
+      // Update conversation turn with fetched code snippets
       setConversationTurns((prevTurns) =>
         prevTurns.map((turn) =>
           turn.id === turnId
             ? {
                 ...turn,
                 loading: false,
-                codeSnippets: [], // TODO: Extract code snippets from response
+                codeSnippets: codeSnippets,
               }
             : turn,
         ),
@@ -367,8 +434,13 @@ export default function ChatInterface() {
     setConversationTurns([]);
   }, [conversation?.id]);
 
-  // Load conversation messages when they're fetched
+  // Load conversation messages and code snippets when they're fetched
   useEffect(() => {
+    // Wait for both queries to finish loading before building turns
+    if (messagesLoading || snippetsLoading) {
+      return;
+    }
+
     if (conversationMessages && conversationMessages.length > 0) {
       const loadedMessages: Message[] = conversationMessages.map((msg) => ({
         id: msg.id,
@@ -380,8 +452,41 @@ export default function ChatInterface() {
         }),
       }));
       setMessages(loadedMessages);
+
+      // Build conversation turns from loaded messages and snippets
+      const turns: ConversationTurn[] = [];
+
+      for (let i = 0; i < loadedMessages.length; i += 2) {
+        const userMsg = loadedMessages[i];
+        const assistantMsg = loadedMessages[i + 1];
+
+        if (userMsg && assistantMsg) {
+          // Find snippets for this assistant message
+          const snippetsForMsg = (conversationCodeSnippets || [])
+            .filter((snippet) => snippet.message_id === assistantMsg.id)
+            .map((snippet) => ({
+              file: snippet.file_path,
+              code: snippet.code_content,
+            }));
+
+          turns.push({
+            id: i / 2,
+            userQuestion: userMsg.text,
+            timestamp: userMsg.timestamp,
+            codeSnippets: snippetsForMsg,
+            loading: false,
+          });
+        }
+      }
+
+      setConversationTurns(turns);
     }
-  }, [conversationMessages]);
+  }, [
+    conversationMessages,
+    conversationCodeSnippets,
+    messagesLoading,
+    snippetsLoading,
+  ]);
 
   // Auto-send initial message when component mounts
   useEffect(() => {

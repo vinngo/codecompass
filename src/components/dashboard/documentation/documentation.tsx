@@ -24,7 +24,6 @@ import { useChatUIStore } from "@/lib/stores/useChatUIStore";
 import { useDocumentationStore } from "@/lib/stores/useDocumentationStore";
 import {
   indexRepository,
-  getDocPages,
   getDocumentationVersions,
   getDocPagesForVersion,
   getRepoWithStatus,
@@ -37,7 +36,6 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [lastIndexed, setLastIndexed] = useState<string>("");
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [showRefreshModal, setShowRefreshModal] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
