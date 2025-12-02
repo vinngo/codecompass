@@ -4,6 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import VersionSelector from "@/components/dashboard/chat/version-selector";
 import mermaid from "mermaid";
+import { motion } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Initialize Mermaid once (outside component to avoid re-initialization)
 let mermaidInitialized = false;
@@ -133,6 +142,7 @@ export function MainContent({
 }: MainContentProps) {
   const internalRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = externalRef || internalRef;
+  const [isFilesDialogOpen, setIsFilesDialogOpen] = useState(false);
 
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -164,10 +174,60 @@ export function MainContent({
           <h1 className="text-xl font-bold">{selectedFile.title}</h1>
           <VersionSelector />
         </div>
-        <button className="text-xs h-8 px-4 border border-grey-700 rounded hover:bg-grey-800 transition-colors flex items-center gap-2">
-          <span>Relevant source files</span>
-          <ChevronRight className="w-3 h-3" />
-        </button>
+        <Dialog open={isFilesDialogOpen} onOpenChange={setIsFilesDialogOpen}>
+          <DialogTrigger asChild>
+            <motion.button
+              className="text-xs h-8 px-4 border border-grey-700 rounded hover:bg-grey-800 transition-colors flex items-center gap-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <span>Relevant source files</span>
+              <motion.div
+                animate={{ x: [0, 3, 0] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 1.5,
+                  ease: "easeInOut",
+                }}
+              >
+                <ChevronRight className="w-3 h-3" />
+              </motion.div>
+            </motion.button>
+          </DialogTrigger>
+
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Referenced Source Files</DialogTitle>
+              <DialogDescription>
+                {selectedFile.referenced_files &&
+                selectedFile.referenced_files.length > 0
+                  ? `${selectedFile.referenced_files.length} file(s) referenced in this documentation`
+                  : "No referenced files"}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              {!selectedFile.referenced_files ||
+              selectedFile.referenced_files.length === 0 ? (
+                <p className="text-sm text-grey-400 text-center py-6">
+                  No source files are referenced in this documentation page.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {selectedFile.referenced_files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="bg-grey-800 hover:bg-grey-700 rounded px-3 py-2 text-xs text-teal-400 transition-colors font-mono break-words"
+                    >
+                      {file}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div
