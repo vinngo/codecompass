@@ -234,6 +234,7 @@ export default function ChatInterface() {
       let buffer = ""; // Buffer for incomplete SSE messages
       const assistantMessageId = `temp-assistant-${Date.now()}`;
       let firstContentReceived = false;
+      const codeSnippets: CodeSnippet[] = []; // Accumulate snippets from stream
 
       // Read the stream
       while (true) {
@@ -269,8 +270,79 @@ export default function ChatInterface() {
             try {
               const dataObj = JSON.parse(dataStr);
 
-              // Extract content from {"content": "..."} format
-              if (dataObj.content && typeof dataObj.content === "string") {
+              // Handle content events: {"type": "content", "content": "..."}
+              if (dataObj.type === "content" && dataObj.content) {
+                accumulatedText += dataObj.content;
+
+                // On first content, hide loading and create assistant message
+                if (!firstContentReceived) {
+                  firstContentReceived = true;
+                  setResponseLoading(false);
+
+                  setConversationTurns((prevTurns) =>
+                    prevTurns.map((turn) =>
+                      turn.id === turnId
+                        ? {
+                            ...turn,
+                            loading: false,
+                          }
+                        : turn,
+                    ),
+                  );
+
+                  setMessages((prevMessages) => [
+                    ...prevMessages,
+                    {
+                      id: assistantMessageId,
+                      text: accumulatedText,
+                      sender: "assistant",
+                      timestamp: new Date().toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }),
+                    },
+                  ]);
+                } else {
+                  // Update the assistant message with accumulated text
+                  setMessages((prevMessages) =>
+                    prevMessages.map((msg) =>
+                      msg.id === assistantMessageId
+                        ? { ...msg, text: accumulatedText }
+                        : msg,
+                    ),
+                  );
+                }
+              }
+              // Handle snippet events: {"type": "snippet", "file": "...", "code": "..."}
+              else if (
+                dataObj.type === "snippet" &&
+                dataObj.file &&
+                dataObj.code
+              ) {
+                const newSnippet: CodeSnippet = {
+                  file: dataObj.file,
+                  code: dataObj.code,
+                };
+                codeSnippets.push(newSnippet);
+
+                // Update conversation turn with new snippet in real-time
+                setConversationTurns((prevTurns) =>
+                  prevTurns.map((turn) =>
+                    turn.id === turnId
+                      ? {
+                          ...turn,
+                          codeSnippets: [...codeSnippets],
+                        }
+                      : turn,
+                  ),
+                );
+              }
+              // Fallback: Handle legacy format {"content": "..."} (no type field)
+              else if (
+                dataObj.content &&
+                typeof dataObj.content === "string" &&
+                !dataObj.type
+              ) {
                 accumulatedText += dataObj.content;
 
                 // On first content, hide loading and create assistant message
@@ -334,57 +406,26 @@ export default function ChatInterface() {
         }
       }
 
-      // Fetch code snippets from backend
-      let codeSnippets: CodeSnippet[] = [];
+      // Save code snippets to database (already received from stream)
+      if (currentConversation && codeSnippets.length > 0) {
+        const saveResult = await saveCodeSnippets(
+          currentConversation.id,
+          assistantMessageId,
+          codeSnippets,
+        );
 
-      try {
-        const snippetsResponse = await fetch("/api/chat/code-snippets", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query: userQuestion,
-            response: accumulatedText,
-            repoId,
-            model: selectedModel.name,
-          }),
-        });
-
-        if (snippetsResponse.ok) {
-          const snippetsData = await snippetsResponse.json();
-          codeSnippets = snippetsData.snippets || [];
-
-          // Save code snippets to database
-          if (currentConversation && codeSnippets.length > 0) {
-            const saveResult = await saveCodeSnippets(
-              currentConversation.id,
-              assistantMessageId,
-              codeSnippets,
-            );
-
-            if (saveResult.success) {
-              // Update React Query cache with new snippets
-              queryClient.setQueryData<DBCodeSnippet[]>(
-                ["codeSnippets", currentConversation.id],
-                (old) => [...(old || []), ...saveResult.data],
-              );
-            } else {
-              console.error("Failed to save code snippets:", saveResult.error);
-            }
-          }
-        } else {
-          console.warn(
-            "Failed to fetch code snippets:",
-            snippetsResponse.statusText,
+        if (saveResult.success) {
+          // Update React Query cache with new snippets
+          queryClient.setQueryData<DBCodeSnippet[]>(
+            ["codeSnippets", currentConversation.id],
+            (old) => [...(old || []), ...saveResult.data],
           );
+        } else {
+          console.error("Failed to save code snippets:", saveResult.error);
         }
-      } catch (error) {
-        console.error("Error fetching code snippets:", error);
-        // Continue gracefully if snippets fail
       }
 
-      // Update conversation turn with fetched code snippets
+      // Ensure final state is updated (in case no snippets were received)
       setConversationTurns((prevTurns) =>
         prevTurns.map((turn) =>
           turn.id === turnId
