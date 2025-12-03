@@ -17,22 +17,21 @@ export async function POST(request: NextRequest) {
     const { query, repoId, conversation, model } = await request.json();
 
     // Simple proxy to backend - just forward the request
-    const response = await fetch(
-      `${process.env.BACKEND_URL}/chat-dummy/stream`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userQuery: query,
-          conversationHistory: conversation,
-          selectedModel: "phi3:latest",
-          userId: user.id,
-          repoId,
-        }),
+    const response = await fetch(`${process.env.BACKEND_URL}/chat/stream`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        userQuery: query,
+        conversationHistory: conversation,
+        selectedModel: "phi3:latest",
+        user_id: user.id,
+        repo_id: repoId,
+      }),
+    });
+
+    console.log(response);
 
     if (!response.ok) {
       return NextResponse.json(

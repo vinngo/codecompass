@@ -199,6 +199,11 @@ export default function ChatInterface() {
 
     try {
       // Call the streaming API endpoint
+
+      const new_conversation: Message[] = [];
+      //start a new conversation
+      if (!conversationMessages) {
+      }
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -207,7 +212,9 @@ export default function ChatInterface() {
         body: JSON.stringify({
           query: userQuestion,
           model: selectedModel.name,
-          conversation: conversationMessages,
+          conversation: conversationMessages
+            ? conversationMessages
+            : new_conversation,
           repoId,
         }),
       });
