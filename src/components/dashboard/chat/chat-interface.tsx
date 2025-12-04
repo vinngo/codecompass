@@ -415,11 +415,11 @@ export default function ChatInterface() {
         );
 
         if (saveResult.success) {
-          // Update React Query cache with new snippets
-          queryClient.setQueryData<DBCodeSnippet[]>(
-            ["codeSnippets", currentConversation.id],
-            (old) => [...(old || []), ...saveResult.data],
-          );
+          console.log("✅ Saved snippets:", saveResult.data);
+          // Invalidate to refetch with correct message_id
+          queryClient.invalidateQueries({
+            queryKey: ["codeSnippets", currentConversation.id],
+          });
         } else {
           console.error("Failed to save code snippets:", saveResult.error);
         }
