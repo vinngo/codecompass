@@ -24,7 +24,7 @@ export type Repo = {
   repo_url: string | null;
   last_indexed_at: string | null;
   metadata: JSON | null;
-  index_status: "pending" | "processing" | "completed" | "failed" | null;
+  index_status: "not indexed" | "indexed" | "indexing";
   object_url: string | null;
   name: string;
 };
@@ -37,6 +37,7 @@ export type Documentation = {
   description: string | null;
   metadata: JSON | null;
   updated_at: string | null;
+  version: number | null;
 };
 
 export type DocPage = {
@@ -52,6 +53,7 @@ export type DocPage = {
   referenced_symbols: JSON | null;
   metadata: JSON | null;
   updated_at: string | null;
+  repo_version: number | null;
 };
 
 export type Conversation = {
@@ -61,6 +63,7 @@ export type Conversation = {
   repo_id: string;
   title: string | null;
   updated_at: string | null;
+  repo_version: number | null;
 };
 
 export type ConversationMessage = {
@@ -79,36 +82,6 @@ export type OrganizationMember = {
   user_email: string;
 };
 
-export type GitProvider = "github" | "gitlab" | "gitlab-self-hosted";
-
-export type GitProviderToken = {
-  id: string;
-  user_id: string;
-  provider: GitProvider;
-  access_token: string;
-  token_type: string;
-  scope: string | null;
-  created_at: string;
-  instance_url: string;
-};
-
-export type RepoValidationStatus =
-  | "valid_public" // Public repo, can clone immediately
-  | "valid_private" // Private repo, needs auth
-  | "invalid_url" // Malformed URL
-  | "not_found" // Repo doesn't exist
-  | "auth_required" // User needs to authenticate
-  | "unknown_provider"; // Provider not supported
-
-export interface RepoValidationResult {
-  status: RepoValidationStatus;
-  message: string;
-  provider?: GitProvider;
-  repo_name?: string;
-  repo_owner?: string;
-  instance_url?: string; // For self-hosted
-}
-
 export type GitHubInstallation = {
   id: string;
   installation_id: string;
@@ -117,5 +90,16 @@ export type GitHubInstallation = {
   installed_by: string | null;
   repositories_access: string | null;
   created_at: string | null;
+  updated_at: string | null;
+};
+
+export type CodeSnippet = {
+  id: string;
+  conversation_id: string;
+  message_id: string;
+  file_path: string;
+  code_content: string;
+  language: string | null;
+  created_at: string;
   updated_at: string | null;
 };

@@ -51,7 +51,7 @@ export default function AnimatedSkeleton() {
               delay: index * 0.05,
             }}
           >
-            <Skeleton className={`h-4 w-[${width}]`} />
+            <Skeleton className={`h-4 w-[${width}] dark:bg-accent `} />
           </motion.div>
         ))}
       </div>

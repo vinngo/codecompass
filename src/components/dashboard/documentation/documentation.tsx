@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Menu, List, FileText } from "lucide-react";
+import { Menu, List, FileText, Loader2 } from "lucide-react";
 import { FileTreeSidebar } from "./file-tree";
 import { MainContent } from "./main-content";
 import { TableOfContentsSidebar } from "./table-of-contents";
+import { FileTreeSkeleton } from "./file-tree-skeleton";
+import { MainContentSkeleton } from "./main-content-skeleton";
+import { TableOfContentsSkeleton } from "./table-of-contents-skeleton";
 import { Page, FileTreeNode, Heading } from "./types";
 import { buildFileTree, extractHeadings } from "./utils";
 import { Button } from "@/components/ui/button";
@@ -18,7 +21,14 @@ import {
 } from "@/components/ui/dialog";
 import { Empty } from "@/components/ui/empty";
 import { useChatUIStore } from "@/lib/stores/useChatUIStore";
-import { indexRepository } from "@/lib/services/repoService";
+import { useDocumentationStore } from "@/lib/stores/useDocumentationStore";
+import {
+  indexRepository,
+  getDocumentationVersions,
+  getDocPagesForVersion,
+  getRepoWithStatus,
+} from "@/lib/services/repoService";
+import { motion } from "framer-motion";
 
 export default function DocumentationViewer({ repoId }: { repoId: string }) {
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
@@ -26,23 +36,45 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [lastIndexed, setLastIndexed] = useState<string>("");
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [showRefreshModal, setShowRefreshModal] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [isFileTreeOpen, setIsFileTreeOpen] = useState(false);
   const [isTocOpen, setIsTocOpen] = useState(false);
   const [error, setError] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
   const mainContentScrollRef = useRef<HTMLDivElement>(null);
   const setHasDocumentation = useChatUIStore(
     (state) => state.setHasDocumentation,
   );
 
+  const selectedVersion = useDocumentationStore(
+    (state) => state.selectedVersion,
+  );
+  const setAvailableVersions = useDocumentationStore(
+    (state) => state.setAvailableVersions,
+  );
+  const selectVersion = useDocumentationStore((state) => state.selectVersion);
+  const isIndexing = useDocumentationStore((state) => state.isIndexing);
+  const setIsIndexing = useDocumentationStore((state) => state.setIsIndexing);
+  const availableVersions = useDocumentationStore(
+    (state) => state.availableVersions,
+  );
+  const setSelectedVersionInChat = useChatUIStore(
+    (state) => state.setSelectedVersion,
+  );
+
   /*This is a React anti-pattern. Replace with tanstack query later*/
   useEffect(() => {
-    fetchDocumentation();
+    fetchVersions();
   }, []);
+
+  useEffect(() => {
+    if (selectedVersion !== null) {
+      // Sync the selected version to the chat store
+      setSelectedVersionInChat(selectedVersion);
+      fetchDocumentation();
+    }
+  }, [selectedVersion, setSelectedVersionInChat]);
 
   useEffect(() => {
     if (selectedFile) {
@@ -51,157 +83,123 @@ export default function DocumentationViewer({ repoId }: { repoId: string }) {
     }
   }, [selectedFile]);
 
+  const fetchVersions = async () => {
+    try {
+      // Check if repository is still indexing
+      const repoResult = await getRepoWithStatus(repoId);
+
+      if (!repoResult.success) {
+        console.error("Error fetching repo status:", repoResult.error);
+        return;
+      }
+
+      // Don't fetch documentation if still indexing
+      if (repoResult.data.index_status === "indexing") {
+        console.log("Repository is still indexing, skipping version fetch");
+        setIsIndexing(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // If we get here, indexing is complete
+      setIsIndexing(false);
+
+      const result = await getDocumentationVersions(repoId);
+
+      if (!result.success) {
+        console.error("Error fetching versions:", result.error);
+        return;
+      }
+
+      // If no documentation versions exist, the repo has never been indexed
+      if (result.data.length === 0) {
+        console.log("No documentation versions found");
+        setIsIndexing(false);
+        setIsLoading(false);
+        return;
+      }
+
+      const versions = result.data.map((doc) => ({
+        version: doc.version ?? 0,
+        createdAt: doc.created_at,
+        updatedAt: doc.updated_at,
+      }));
+
+      setAvailableVersions(versions);
+
+      // Auto-select the latest version
+      if (versions.length > 0) {
+        selectVersion(versions[0].version);
+      }
+    } catch (error) {
+      console.error("Error fetching versions:", error);
+    }
+  };
+
   const fetchDocumentation = async () => {
     try {
       setIsLoading(true);
 
-      // Mock data information from deepwiki vs code architecture
+      if (selectedVersion === null) {
+        setIsLoading(false);
+        return;
+      }
 
-      /*const mockPages: Page[] = [
-        {
-          id: "1",
-          documentation_id: "doc-1",
-          title: "VS Code Architecture Overview",
-          slug: "vs-code-architecture-overview",
-          content: `# VS Code Architecture Overview
+      const result = await getDocPagesForVersion(repoId, selectedVersion);
 
-## Purpose and Scope
+      if (!result.success) {
+        console.error("Error fetching documentation:", result.error);
+        setFileTree([]);
+        setHasDocumentation(false);
+        setIsLoading(false);
+        return;
+      }
 
-This document provides a high-level overview of VS Code architecture, focusing on the multi-process design, core systems, and how major components interact. It explains the separation between the main process, renderer process, extension host, and specialized processes, as well as the foundational services and dependency injection patterns used throughout the codebase.
+      // Map DocPage[] to Page[]
+      const pages: Page[] = result.data.map((docPage) => {
+        // Helper function to parse JSON fields to string arrays
+        const parseToStringArray = (field: unknown): string[] | null => {
+          if (!field) return null;
+          if (Array.isArray(field)) return field;
+          if (typeof field === "string") {
+            try {
+              const parsed = JSON.parse(field);
+              return Array.isArray(parsed) ? parsed : null;
+            } catch {
+              return null;
+            }
+          }
+          return null;
+        };
 
-For detailed information about specific subsystems:
+        return {
+          id: docPage.id,
+          documentation_id: docPage.documentation_id,
+          title: docPage.title ?? "Untitled",
+          slug: docPage.slug ?? "",
+          content: docPage.content ?? "",
+          order_index: docPage.order_index ?? 0,
+          parent_page_id: docPage.parent_page_id,
+          referenced_files: parseToStringArray(docPage.referenced_files),
+          referenced_symbols: parseToStringArray(docPage.referenced_symbols),
+          metadata: docPage.metadata,
+          created_at: docPage.created_at,
+          updated_at: docPage.updated_at ?? docPage.created_at,
+          version: 1, // Default version for now
+        };
+      });
 
-- Application startup and initialization: see Application Startup and Process Architecture
-- Build system details: see Build System and Package Management
-- Native module compilation: see Native Module Compilation and Platform Support
-- Extension architecture: see Extension System
-- Workbench UI framework: see Workbench and UI Framework
-- Monaco editor integration: see Monaco Editor Integration
-
-## Multi-Process Architecture
-
-VS Code runs as a multi-process Electron application with clear separation of concerns for security, stability, and extensibility.
-
-### Process Responsibilities
-
-Each process has specific responsibilities and boundaries to maintain security and stability.
-
-### Core Workbench Architecture
-
-The workbench is the main UI shell that hosts the editor and all UI components.
-
-## Extension System Architecture
-
-Extensions run in a separate process for security and stability.
-
-### Extension API Surface
-
-The extension API is designed to be stable and backwards compatible.
-
-### Type Converters
-
-Type converters handle the translation between internal and external types.
-
-### Service Dependency Injection
-
-Services are registered and injected throughout the codebase using dependency injection.
-
-### Core Service Interfaces
-
-Core services provide fundamental functionality to all parts of the application.
-
-### Editor and Monaco Integration
-
-The Monaco editor is integrated into the workbench as the core text editing component.
-
-### Editor Configuration
-
-Editor configuration is managed through a centralized service.
-
-## Build System and Packaging
-
-The build system handles TypeScript compilation, native modules, and packaging.
-
-### Key Build Artifacts
-
-Build artifacts include the packaged application and extension marketplace packages.
-
-### Initialization Sequence
-
-The initialization sequence defines the startup order of all components.`,
-          order_index: 1,
-          parent_page_id: null,
-          referenced_files: [
-            "src/vs/code/electron-main/main.ts",
-            "src/vs/workbench/workbench.ts",
-          ],
-          referenced_symbols: null,
-          metadata: null,
-          created_at: "2025-10-19T00:00:00Z",
-          updated_at: "2025-10-19T00:00:00Z",
-          version: 1,
-        },
-        {
-          id: "2",
-          documentation_id: "doc-1",
-          title: "Application Startup and Process Architecture",
-          slug: "application-startup",
-          content: `# Application Startup and Process Architecture\n\nDetailed information about how VS Code starts up and initializes its processes.`,
-          order_index: 1,
-          parent_page_id: "1",
-          referenced_files: null,
-          referenced_symbols: null,
-          metadata: null,
-          created_at: "2025-10-19T00:00:00Z",
-          updated_at: "2025-10-19T00:00:00Z",
-          version: 1,
-        },
-        {
-          id: "3",
-          documentation_id: "doc-1",
-          title: "Build System and Package Management",
-          slug: "build-system",
-          content: `# Build System and Package Management\n\nInformation about the build system.`,
-          order_index: 2,
-          parent_page_id: "1",
-          referenced_files: null,
-          referenced_symbols: null,
-          metadata: null,
-          created_at: "2025-10-19T00:00:00Z",
-          updated_at: "2025-10-19T00:00:00Z",
-          version: 1,
-        },
-        {
-          id: "4",
-          documentation_id: "doc-1",
-          title: "Extension System",
-          slug: "extension-system",
-          content: `# Extension System\n\nHow extensions work in VS Code.`,
-          order_index: 2,
-          parent_page_id: null,
-          referenced_files: null,
-          referenced_symbols: null,
-          metadata: null,
-          created_at: "2025-10-19T00:00:00Z",
-          updated_at: "2025-10-19T00:00:00Z",
-          version: 1,
-        },
-      ];
-      */
-
-      const mockPages: Page[] = [];
-
-      const tree = buildFileTree(mockPages);
+      const tree = buildFileTree(pages);
       setFileTree(tree);
-      setLastIndexed("19 October 2025 (cc66fc)");
 
-      setExpandedNodes(new Set(["1", "4"]));
-      setSelectedFile(mockPages[0]);
+      // Set the first page as selected if available
+      if (pages.length > 0) {
+        setSelectedFile(pages[0]);
+      }
 
       // Update chat UI store with documentation availability
-      setHasDocumentation(mockPages.length > 0);
+      setHasDocumentation(pages.length > 0);
     } catch (error) {
-      console.error("Error fetching documentation:", error);
       setHasDocumentation(false);
     } finally {
       setIsLoading(false);
@@ -220,45 +218,94 @@ The initialization sequence defines the startup order of all components.`,
     });
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     try {
       setError("");
-      /*
-        server action: call the backend to reindex the codebase and update status in postgres
-      */
+      setIsIndexing(true);
+
+      const result = await indexRepository(repoId);
+
+      if (!result.success) {
+        setError(result.error);
+        setIsIndexing(false);
+        return;
+      }
+
+      // Clear client-side documentation state
+      setFileTree([]);
+      setSelectedFile(null);
+      setExpandedNodes(new Set());
+      setHeadings([]);
+      setHasDocumentation(false);
 
       setShowRefreshModal(false);
+      // Keep isIndexing true - it will be cleared when fetchVersions detects completion
+
+      // Refetch versions to include the new one
+      await fetchVersions();
     } catch (e) {
-      setError("could not refresh:" + e);
+      setError("Could not refresh: " + e);
+      setIsIndexing(false);
     }
   };
 
   const handleGenerate = async () => {
     try {
       setError("");
-      setIsGenerating(true);
+      setIsIndexing(true);
 
       const result = await indexRepository(repoId);
 
       if (!result.success) {
         setError(result.error);
-        setIsGenerating(false);
+        setIsIndexing(false);
         return;
       }
 
       setShowGenerateModal(false);
-      // Optionally refetch documentation after indexing starts
-      await fetchDocumentation();
+      // Keep isIndexing true - it will be cleared when fetchVersions detects completion
+
+      // Refetch versions to include the new one
+      await fetchVersions();
     } catch (e) {
       setError("Could not generate documentation: " + e);
-      setIsGenerating(false);
+      setIsIndexing(false);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-gray-400">Loading documentation...</div>
+      <div className="flex bg-background h-full">
+        <FileTreeSkeleton />
+        <MainContentSkeleton />
+        <TableOfContentsSkeleton />
+      </div>
+    );
+  }
+
+  if (isIndexing) {
+    return (
+      <div className="flex h-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <Loader2 className="h-12 w-12 text-primary" />
+          </motion.div>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">Indexing Repository</h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Your codebase is being indexed. This may take a while depending on
+              the size of your repository. You can safely navigate away from
+              this page.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -269,11 +316,11 @@ The initialization sequence defines the startup order of all components.`,
         <div className="flex h-full items-center justify-center bg-background">
           <Empty
             title="No documentation available"
-            description="Index your codebase to gain documentation and AI insights."
+            description="Index your codebase to generate documentation and enable AI insights."
             icon={<FileText className="h-8 w-8" />}
           >
             <Button onClick={() => setShowGenerateModal(true)}>
-              Generate Documentation
+              Index Codebase
             </Button>
           </Empty>
         </div>
@@ -281,11 +328,10 @@ The initialization sequence defines the startup order of all components.`,
         <Dialog open={showGenerateModal} onOpenChange={setShowGenerateModal}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Generate Documentation</DialogTitle>
+              <DialogTitle>Index Codebase</DialogTitle>
               <DialogDescription>
-                This will index your codebase and generate comprehensive
-                documentation. This process may take a while depending on the
-                size of your repository.
+                This will index your codebase. This process may take a while
+                depending on the size of your repository.
               </DialogDescription>
             </DialogHeader>
             {error && (
@@ -298,16 +344,33 @@ The initialization sequence defines the startup order of all components.`,
                 variant="outline"
                 onClick={() => setShowGenerateModal(false)}
                 className="w-full sm:w-auto"
-                disabled={isGenerating}
+                disabled={isIndexing}
               >
                 Cancel
               </Button>
               <Button
                 className="w-full sm:w-auto"
                 onClick={handleGenerate}
-                disabled={isGenerating}
+                disabled={isIndexing}
               >
-                {isGenerating ? "Generating..." : "Generate"}
+                {isIndexing ? (
+                  <div className="flex items-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      className="mr-2"
+                    >
+                      <Loader2 className="h-4 w-4" />
+                    </motion.div>
+                    Indexing...
+                  </div>
+                ) : (
+                  "Index"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -348,7 +411,11 @@ The initialization sequence defines the startup order of all components.`,
         selectedFile={selectedFile}
         expandedNodes={expandedNodes}
         searchQuery={searchQuery}
-        lastIndexed={lastIndexed}
+        lastIndexed={
+          availableVersions.find(
+            (version) => version.version === selectedVersion,
+          )?.updatedAt ?? ""
+        }
         onSelectFile={setSelectedFile}
         onToggleExpanded={toggleExpanded}
         onSearchChange={setSearchQuery}
@@ -375,8 +442,9 @@ The initialization sequence defines the startup order of all components.`,
           <DialogHeader>
             <DialogTitle>Refresh this wiki</DialogTitle>
             <DialogDescription>
-              This action will reindex your codebase. Documentation and chat
-              will be unavailable for a short time.
+              This action will reindex your codebase and create a new version.
+              The process may take a while depending on the size of your
+              repository.
             </DialogDescription>
           </DialogHeader>
           {error && (
@@ -385,8 +453,37 @@ The initialization sequence defines the startup order of all components.`,
             </div>
           )}
           <DialogFooter>
-            <Button className="w-full sm:w-auto" onClick={handleRefresh}>
-              Refresh
+            <Button
+              variant="outline"
+              onClick={() => setShowRefreshModal(false)}
+              className="w-full sm:w-auto"
+              disabled={isIndexing}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-full sm:w-auto"
+              onClick={handleRefresh}
+              disabled={isIndexing}
+            >
+              {isIndexing ? (
+                <div className="flex items-center">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    className="mr-2"
+                  >
+                    <Loader2 className="h-4 w-4" />
+                  </motion.div>
+                  Reindexing...
+                </div>
+              ) : (
+                "Refresh"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

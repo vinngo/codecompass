@@ -9,6 +9,7 @@ import {
   Settings,
   BookOpen,
   MessageSquare,
+  MessageSquarePlus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -47,7 +48,7 @@ export function DashboardSidebar() {
         return (
           <>
             <SidebarItem
-              icon={<Building2 className="h-5 w-5" />}
+              icon={<Building2 className="h-4.5 w-4.5" />}
               label="Organizations"
               action={() => router.push(`/dashboard/organizations`)}
             />
@@ -58,19 +59,19 @@ export function DashboardSidebar() {
         return (
           <>
             <SidebarItem
-              icon={<FolderCode className="h-5 w-5" />}
+              icon={<FolderCode className="h-4.5 w-4.5" />}
               label="Repositories"
               action={() => router.push(`/dashboard/org/${currentContext.id}`)}
             />
             <SidebarItem
-              icon={<Users className="h-5 w-5" />}
+              icon={<Users className="h-4.5 w-4.5" />}
               label="Team"
               action={() =>
                 router.push(`/dashboard/org/${currentContext.id}/team`)
               }
             />
             <SidebarItem
-              icon={<Settings className="h-5 w-5" />}
+              icon={<Settings className="h-4.5 w-4.5" />}
               label="Settings"
               action={() =>
                 router.push(`/dashboard/org/${currentContext.id}/settings`)
@@ -84,13 +85,17 @@ export function DashboardSidebar() {
           <>
             <SidebarItem
               icon={
-                chatExpanded ? (
-                  <BookOpen className="h-5 w-5" />
+                chatExpanded || pathname.includes("/settings") ? (
+                  <BookOpen className="h-4.5 w-4.5" />
                 ) : (
-                  <MessageSquare className="h-5 w-5" />
+                  <MessageSquare className="h-4.5 w-4.5" />
                 )
               }
-              label={chatExpanded ? "Documentation" : "Chat"}
+              label={
+                chatExpanded || pathname.includes("/settings")
+                  ? "Documentation"
+                  : "Chat"
+              }
               action={() => {
                 // Navigate to repo page if not already there
                 if (pathname !== `/dashboard/repo/${currentContext.id}`) {
@@ -98,12 +103,24 @@ export function DashboardSidebar() {
                 }
                 toggle();
               }}
-              disabled={!hasDocumentation}
+              disabled={!hasDocumentation && !pathname.includes("/settings")}
             />
+            {!pathname.includes("/settings") && chatExpanded && (
+              <SidebarItem
+                icon={<MessageSquarePlus className="h-4.5 w-4.5" />}
+                label="New Message"
+                action={() => {
+                  const { startNewConversation } = useChatUIStore.getState();
+                  startNewConversation();
+                }}
+              />
+            )}
 
-            {chatExpanded && <ConversationPanel />}
+            {!pathname.includes("/settings") && chatExpanded && (
+              <ConversationPanel />
+            )}
             <SidebarItem
-              icon={<Settings className="h-5 w-5" />}
+              icon={<Settings className="h-4.5 w-4.5" />}
               label="Settings"
               action={() =>
                 router.push(`/dashboard/repo/${currentContext.id}/settings`)
@@ -116,12 +133,12 @@ export function DashboardSidebar() {
         return (
           <>
             <SidebarItem
-              icon={<Building2 className="h-5 w-5" />}
+              icon={<Building2 className="h-4.5 w-4.5" />}
               label="Organizations"
               action={() => router.push("/dashboard/organizations")}
             />
             <SidebarItem
-              icon={<Settings className="h-5 w-5" />}
+              icon={<Settings className="h-4.5 w-4.5" />}
               label="Settings"
               action={() => router.push("/dashboard/organizations")}
             />

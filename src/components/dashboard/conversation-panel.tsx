@@ -6,68 +6,35 @@ import { useSidebar } from "./sidebar";
 import { Conversation } from "@/app/types/supabase";
 import { Separator } from "@/components/ui/separator";
 import { MessageSquare } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getConversations } from "@/lib/services/repoService";
 
 export default function ConversationPanel() {
   const { isExpanded: sideBarExpanded } = useSidebar();
-  const { isExpanded: chatExpanded, conversation: selectedConversation } =
-    useChatUIStore();
+  const {
+    isExpanded: chatExpanded,
+    conversation: selectedConversation,
+    repoId,
+    selectedVersion,
+  } = useChatUIStore();
 
-  const mockConversations: Conversation[] = [
-    {
-      id: "1",
-      created_at: new Date().toISOString(),
-      user_id: "user-1",
-      repo_id: "repo-1",
-      title: "How to implement authentication?",
-      updated_at: new Date().toISOString(),
+  // Fetch conversations using TanStack Query
+  const { data: conversations = [], isLoading } = useQuery({
+    queryKey: ["conversations", repoId, selectedVersion],
+    queryFn: async () => {
+      if (!repoId) return [];
+      const result = await getConversations(repoId, 20, selectedVersion);
+      if (!result.success) throw new Error(result.error);
+      return result.data;
     },
-    {
-      id: "2",
-      created_at: new Date().toISOString(),
-      user_id: "user-1",
-      repo_id: "repo-1",
-      title: "Explain the database schema",
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: "3",
-      created_at: new Date().toISOString(),
-      user_id: "user-1",
-      repo_id: "repo-1",
-      title: "How does routing work?",
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: "4",
-      created_at: new Date().toISOString(),
-      user_id: "user-1",
-      repo_id: "repo-1",
-      title: "API endpoint documentation",
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: "5",
-      created_at: new Date().toISOString(),
-      user_id: "user-1",
-      repo_id: "repo-1",
-      title: "State management patterns",
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: "6",
-      created_at: new Date().toISOString(),
-      user_id: "user-1",
-      repo_id: "repo-1",
-      title: "Component architecture overview",
-      updated_at: new Date().toISOString(),
-    },
-  ];
+    enabled: !!repoId && chatExpanded,
+  });
 
   const handleClick = (conversationId: string) => {
-    const selectedConversation = mockConversations.find(
+    const selected = conversations.find(
       (conversation) => conversation.id === conversationId,
     );
-    useChatUIStore.setState({ conversation: selectedConversation });
+    useChatUIStore.setState({ conversation: selected });
   };
 
   if (!chatExpanded) return null;
@@ -90,7 +57,11 @@ export default function ConversationPanel() {
         </>
       )}
 
-      {mockConversations.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <p className="text-xs text-muted-foreground">Loading...</p>
+        </div>
+      ) : conversations.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
           <MessageSquare className="w-8 h-8 text-muted-foreground mb-2" />
           <p className="text-xs text-muted-foreground">No conversations yet</p>
@@ -99,7 +70,7 @@ export default function ConversationPanel() {
           </p>
         </div>
       ) : (
-        mockConversations.map((conversation, index) => {
+        conversations.map((conversation, index) => {
           const isSelected = selectedConversation?.id === conversation.id;
 
           return (

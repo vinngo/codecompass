@@ -1,13 +1,30 @@
 import { ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
+import VersionSelector from "@/components/dashboard/chat/version-selector";
+import mermaid from "mermaid";
+import { motion } from "framer-motion";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+// Initialize Mermaid once (outside component to avoid re-initialization)
+let mermaidInitialized = false;
+const initializeMermaid = (theme: string) => {
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: theme === "dark" ? "dark" : "default",
+    securityLevel: "loose",
+    fontFamily: "ui-sans-serif, system-ui, sans-serif",
+  });
+  mermaidInitialized = true;
+};
 
 interface Page {
   id: string;
@@ -30,25 +47,108 @@ interface MainContentProps {
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
+interface MermaidComponentProps {
+  chart: string;
+}
+
+function MermaidComponent({ chart }: MermaidComponentProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Avoid hydration mismatch by waiting for client-side mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !ref.current) return;
+
+    const currentTheme = resolvedTheme || theme || "dark";
+
+    // Re-initialize Mermaid when theme changes
+    if (!mermaidInitialized || ref.current.dataset.theme !== currentTheme) {
+      initializeMermaid(currentTheme);
+    }
+
+    const renderDiagram = async () => {
+      if (!ref.current) return;
+
+      try {
+        // Clear previous content
+        ref.current.innerHTML = "";
+        setError(null);
+
+        // Generate unique ID for each diagram
+        const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+
+        // Render the diagram
+        const { svg } = await mermaid.render(id, chart);
+
+        if (ref.current) {
+          ref.current.innerHTML = svg;
+          ref.current.dataset.theme = currentTheme;
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to render diagram";
+        console.error("Mermaid rendering error:", err);
+        setError(errorMessage);
+      }
+    };
+
+    renderDiagram();
+  }, [chart, theme, resolvedTheme, mounted]);
+
+  if (!mounted) {
+    return (
+      <div className="my-6 flex justify-center items-center min-h-[200px] bg-grey-900 rounded border border-grey-800">
+        <p className="text-grey-500 text-sm">Loading diagram...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="my-6 bg-red-900/20 border border-red-800 rounded p-4">
+        <p className="text-red-400 text-sm font-semibold mb-1">
+          Diagram rendering failed
+        </p>
+        <p className="text-red-300/80 text-xs">{error}</p>
+        <details className="mt-2">
+          <summary className="text-xs text-red-300/60 cursor-pointer hover:text-red-300/80">
+            View source
+          </summary>
+          <pre className="mt-2 text-xs text-red-200/60 overflow-x-auto bg-red-950/30 p-2 rounded">
+            {chart}
+          </pre>
+        </details>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="mermaid my-6 flex justify-center items-center overflow-x-auto"
+    />
+  );
+}
+
 export function MainContent({
   selectedFile,
   scrollContainerRef: externalRef,
 }: MainContentProps) {
   const internalRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = externalRef || internalRef;
-  const [selectedVersion, setSelectedVersion] = useState("v0");
+  const [isFilesDialogOpen, setIsFilesDialogOpen] = useState(false);
 
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo(0, 0);
     }
   }, [selectedFile, scrollContainerRef]);
-
-  const handleVersionChange = (version: string) => {
-    setSelectedVersion(version);
-    // TODO: Fetch documentation for the selected version
-    console.log("Version changed to:", version);
-  };
 
   if (!selectedFile) {
     return (
@@ -72,22 +172,62 @@ export function MainContent({
       <div className="border-b border-grey-800 px-6 py-3 flex items-center justify-between">
         <div className="flex flex-row gap-5 items-center">
           <h1 className="text-xl font-bold">{selectedFile.title}</h1>
-          <Select value={selectedVersion} onValueChange={handleVersionChange}>
-            <SelectTrigger className="w-17 h-8 text-sm font-semibold">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="v0">v0</SelectItem>
-              <SelectItem value="v1">v1</SelectItem>
-              <SelectItem value="v2">v2</SelectItem>
-              <SelectItem value="v3">v3</SelectItem>
-            </SelectContent>
-          </Select>
+          <VersionSelector />
         </div>
-        <button className="text-xs h-8 px-4 border border-grey-700 rounded hover:bg-grey-800 transition-colors flex items-center gap-2">
-          <span>Relevant source files</span>
-          <ChevronRight className="w-3 h-3" />
-        </button>
+        <Dialog open={isFilesDialogOpen} onOpenChange={setIsFilesDialogOpen}>
+          <DialogTrigger asChild>
+            <motion.button
+              className="text-xs h-8 px-4 border border-grey-700 rounded hover:bg-grey-800 transition-colors flex items-center gap-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <span>Relevant source files</span>
+              <motion.div
+                animate={{ x: [0, 3, 0] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 1.5,
+                  ease: "easeInOut",
+                }}
+              >
+                <ChevronRight className="w-3 h-3" />
+              </motion.div>
+            </motion.button>
+          </DialogTrigger>
+
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Referenced Source Files</DialogTitle>
+              <DialogDescription>
+                {selectedFile.referenced_files &&
+                selectedFile.referenced_files.length > 0
+                  ? `${selectedFile.referenced_files.length} file(s) referenced in this documentation`
+                  : "No referenced files"}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              {!selectedFile.referenced_files ||
+              selectedFile.referenced_files.length === 0 ? (
+                <p className="text-sm text-grey-400 text-center py-6">
+                  No source files are referenced in this documentation page.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {selectedFile.referenced_files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="bg-grey-800 hover:bg-grey-700 rounded px-3 py-2 text-xs text-teal-400 transition-colors font-mono break-words"
+                    >
+                      {file}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div
@@ -205,6 +345,12 @@ export function MainContent({
                 ),
                 code: ({ node, className, children, ...props }) => {
                   const isInline = !className?.includes("language-");
+                  const match = /language-(\w+)/.exec(className || "");
+
+                  if (match && match[1] === "mermaid") {
+                    const code = String(children).replace(/\n$/, "");
+                    return <MermaidComponent chart={code} />;
+                  }
                   return isInline ? (
                     <code
                       className="bg-grey-800 text-teal-400 px-1.5 py-0.5 rounded text-sm"

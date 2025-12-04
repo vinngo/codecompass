@@ -10,10 +10,14 @@ import {
   NavigationMenuLink,
 } from "../ui/navigation-menu";
 
-export default function Navbar() {
+type NavbarProps = {
+  isAuthenticated: boolean;
+};
+
+export default function Navbar({ isAuthenticated }: NavbarProps) {
   return (
-    <div className="container mx-auto border-b border-border">
-      <div className="flex h-16 items-center justify-between">
+    <div className="sticky top-0 z-50 w-full border-b border-border backdrop-blur">
+      <div className="container mx-auto flex h-16 items-center justify-between">
         {/* Logo */}
         <div className="shrink-0">
           <Link href="/" className="flex items-center gap-2">
@@ -37,7 +41,9 @@ export default function Navbar() {
                 <NavigationMenuLink asChild>
                   <button
                     onClick={() => {
-                      document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                      document
+                        .getElementById("features")
+                        ?.scrollIntoView({ behavior: "smooth" });
                     }}
                     className="inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus:text-foreground focus:outline-none"
                   >
@@ -49,7 +55,9 @@ export default function Navbar() {
                 <NavigationMenuLink asChild>
                   <button
                     onClick={() => {
-                      document.getElementById('comparison')?.scrollIntoView({ behavior: 'smooth' });
+                      document
+                        .getElementById("comparison")
+                        ?.scrollIntoView({ behavior: "smooth" });
                     }}
                     className="inline-flex h-9 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus:text-foreground focus:outline-none"
                   >
@@ -62,12 +70,20 @@ export default function Navbar() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
-            <Button variant="default" size="sm">
-              <Link href="/login">Start indexing</Link>
-            </Button>
+            {isAuthenticated ? (
+              <Button variant="default" size="sm" asChild>
+                <Link href="/dashboard/organizations">Go to Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/login">Sign in</Link>
+                </Button>
+                <Button variant="default" size="sm">
+                  <Link href="/login">Start indexing</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

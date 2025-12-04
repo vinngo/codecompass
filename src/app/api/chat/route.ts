@@ -13,23 +13,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { query } = await request.json();
+    //TODO: use the model parameter when the official list of models comes out
+    const { query, repoId, conversation, model } = await request.json();
 
     // Simple proxy to backend - just forward the request
-    const response = await fetch(
-      `${process.env.BACKEND_URL}/chat-dummy/stream`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userQuery: query,
-          conversationHistory: [],
-          selectedModel: "phi3:latest",
-        }),
+    const response = await fetch(`${process.env.BACKEND_URL}/chat/stream`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        userQuery: query,
+        conversationHistory: conversation,
+        selectedModel: "phi3:latest",
+        user_id: user.id,
+        repo_id: repoId,
+      }),
+    });
+
+    console.log(response);
 
     if (!response.ok) {
       return NextResponse.json(

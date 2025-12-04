@@ -5,6 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useRouter, useParams } from "next/navigation";
 import {
   updateRepoSettings,
@@ -14,7 +22,6 @@ import {
 import { NavbarContextSetter } from "@/components/dashboard/navbar-context-setter";
 import { createClient } from "@/utils/supabase/client";
 import type { Repo } from "@/app/types/supabase";
-import { Separator } from "@/components/ui/separator";
 
 export default function RepoSettings() {
   const [repoName, setRepoName] = useState("");
@@ -24,6 +31,10 @@ export default function RepoSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+  const [repoUrl, setRepoUrl] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const router = useRouter();
   const params = useParams();
   const repoId = params.id as string;
@@ -42,6 +53,7 @@ export default function RepoSettings() {
 
       setRepo(result.data);
       setRepoName(result.data.name);
+      setRepoUrl(result.data.repo_url || "");
 
       // Fetch organization name for breadcrumbs
       const { data: org } = await supabase
@@ -69,7 +81,21 @@ export default function RepoSettings() {
     setIsSaving(true);
     setError("");
 
-    const result = await updateRepoSettings(repoId, { name: repoName });
+    const settings: { name: string; repo_url?: string; file?: File } = {
+      name: repoName,
+    };
+
+    // Add GitHub URL if changed
+    if (repo?.provider === "github" && repoUrl && repoUrl !== repo.repo_url) {
+      settings.repo_url = repoUrl;
+    }
+
+    // Add file if uploaded
+    if (repo?.provider === "local" && uploadedFile) {
+      settings.file = uploadedFile;
+    }
+
+    const result = await updateRepoSettings(repoId, settings);
 
     if (!result.success) {
       setError(result.error);
@@ -81,13 +107,12 @@ export default function RepoSettings() {
     router.push(`/dashboard/repo/${repoId}`);
   };
 
-  const handleDelete = async () => {
-    const confirmDelete = confirm(
-      "Are you sure you want to delete this repository? This cannot be undone.",
-    );
+  const handleDeleteClick = () => {
+    setDeleteConfirmationText("");
+    setShowDeleteDialog(true);
+  };
 
-    if (!confirmDelete) return;
-
+  const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     setError("");
 
@@ -96,23 +121,15 @@ export default function RepoSettings() {
     if (!result.success) {
       setError(result.error);
       setIsDeleting(false);
+      setShowDeleteDialog(false);
       return;
     }
 
     router.push(`/dashboard/org/${result.data.organizationId}`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="max-w-2xl mx-auto space-y-8 py-12">
-        <h1 className="text-3xl font-bold">Repository Settings</h1>
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-2xl mx-auto space-y-8 py-12">
+    <div className="max-w-3xl mx-auto space-y-6 py-8 px-4">
       {repo && (
         <NavbarContextSetter
           breadcrumbs={[
@@ -126,50 +143,178 @@ export default function RepoSettings() {
           ]}
         />
       )}
-      <h1 className="text-3xl font-bold">Repository Settings</h1>
+
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Repository Settings
+        </h1>
+        <p className="text-muted-foreground">
+          Manage your repository configuration and source files
+        </p>
+      </div>
 
       {error && (
-        <div className="p-4 bg-destructive/10 text-destructive rounded-md">
+        <div className="p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
           {error}
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Repository Details</CardTitle>
+      <Card className="border-border/50">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl">Repository Details</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <Label htmlFor="repoName">Repository Name</Label>
-              <Separator />
-            </div>
+        <CardContent className="space-y-6">
+          {/* Repository Name */}
+          <div className="space-y-2">
+            <Label htmlFor="repoName" className="text-sm font-medium">
+              Repository Name
+            </Label>
             <Input
               id="repoName"
-              value={repoName}
+              value={isLoading ? "Loading..." : repoName}
               onChange={(e) => setRepoName(e.target.value)}
               placeholder="Enter repository name"
               disabled={isSaving}
+              className="h-10"
             />
           </div>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <Label htmlFor="repoName">Delete Repository</Label>
-              <Separator />
+
+          {/* GitHub Repository URL */}
+          {repo?.provider === "github" && (
+            <div className="space-y-2">
+              <Label htmlFor="repoUrl" className="text-sm font-medium">
+                Repository URL
+              </Label>
+              <Input
+                id="repoUrl"
+                value={isLoading ? "Loading..." : repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                placeholder="https://github.com/owner/repo"
+                disabled={isSaving}
+                className="h-10 font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                To see changes, you must manually request indexing after this
+                change.
+              </p>
             </div>
+          )}
+
+          {/* Local Repository File Upload */}
+          {repo?.provider === "local" && (
+            <div className="space-y-2">
+              <Label htmlFor="repoFile" className="text-sm font-medium">
+                Repository File
+              </Label>
+              <Input
+                id="repoFile"
+                type="file"
+                accept=".zip,application/zip"
+                onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                disabled={isSaving}
+                className="cursor-pointer file:cursor-pointer file:border file:border-input file:bg-background file:hover:bg-accent file:px-4 file:py-1.5 file:rounded-md file:mr-3 file:transition-colors file:text-sm"
+              />
+              {uploadedFile && (
+                <p className="text-xs text-muted-foreground">
+                  Selected: {uploadedFile.name} (
+                  {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                To see changes, you must manually request indexing after this
+                change.
+              </p>
+            </div>
+          )}
+
+          <div className="pt-2">
             <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full sm:w-auto"
             >
-              {isDeleting ? "Deleting..." : "Delete Repository"}
+              {isSaving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Danger Zone */}
+      <Card className="border-destructive/50">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl text-destructive">
+            Danger Zone
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Delete Repository</Label>
+            <p className="text-sm text-muted-foreground">
+              Once you delete a repository, there is no going back. Please be
+              certain.
+            </p>
+          </div>
+          <Button
+            variant="destructive"
+            onClick={handleDeleteClick}
+            disabled={isDeleting}
+            className="w-full sm:w-auto"
+          >
+            Delete Repository
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Repository</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this repository? This action
+              cannot be undone. All documentation and chat history will be
+              permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label
+                htmlFor="deleteConfirmation"
+                className="text-sm font-medium"
+              >
+                Type <span className="font-mono font-semibold">{repoName}</span>{" "}
+                to confirm
+              </Label>
+              <Input
+                id="deleteConfirmation"
+                value={deleteConfirmationText}
+                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                placeholder={repoName}
+                disabled={isDeleting}
+                className="h-10"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting || deleteConfirmationText !== repoName}
+              className="w-full sm:w-auto"
+            >
+              {isDeleting ? "Deleting..." : "Delete Repository"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
