@@ -154,7 +154,7 @@ export async function createRepoViaGithub(
   const { owner, repo: repoName } = parseGitHubUrl(url);
 
   const hasAccess = await verifyGithubRepoAccess(
-    installation.id,
+    installation.installation_id,
     owner,
     repoName,
   );
