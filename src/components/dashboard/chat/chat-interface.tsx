@@ -391,14 +391,17 @@ export default function ChatInterface() {
         }
       }
 
-      // Save assistant message to database
+      // Save assistant message to database first to get the real message ID
+      let realMessageId = assistantMessageId;
       if (currentConversation && accumulatedText) {
         const assistantMessageResult = await createMessage(
           currentConversation.id,
           "assistant",
           accumulatedText,
         );
-        if (!assistantMessageResult.success) {
+        if (assistantMessageResult.success) {
+          realMessageId = assistantMessageResult.data.id;
+        } else {
           console.error(
             "Failed to save assistant message:",
             assistantMessageResult.error,
@@ -406,20 +409,21 @@ export default function ChatInterface() {
         }
       }
 
-      // Save code snippets to database (already received from stream)
+      // Save code snippets to database with the real message ID
       if (currentConversation && codeSnippets.length > 0) {
         const saveResult = await saveCodeSnippets(
           currentConversation.id,
-          assistantMessageId,
+          realMessageId,
           codeSnippets,
         );
 
         if (saveResult.success) {
-          // Update React Query cache with new snippets
-          queryClient.setQueryData<DBCodeSnippet[]>(
-            ["codeSnippets", currentConversation.id],
-            (old) => [...(old || []), ...saveResult.data],
-          );
+          queryClient.invalidateQueries({
+            queryKey: ["codeSnippets", currentConversation.id],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["messages", currentConversation.id],
+          });
         } else {
           console.error("Failed to save code snippets:", saveResult.error);
         }
