@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const { blobs } = await list({
-      prefix: "demos/", // Filter to only video files in the videos folder
+      prefix: "demos/code-compass-demo-complete-compressed.mp4", // Filter to only video files in the videos folder
       limit: 10, // Limit to 10 videos
     });
 
